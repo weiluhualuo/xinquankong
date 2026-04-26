@@ -1,4 +1,6 @@
-﻿import { PublishForm } from "../../components/publish-form";
+﻿export const dynamic = "force-dynamic";
+
+import { PublishForm } from "../../components/publish-form";
 import { getBoards, getTags } from "../../lib/api";
 
 export default async function PublishPage() {
@@ -26,3 +28,4 @@ export default async function PublishPage() {
     </div>
   );
 }
+

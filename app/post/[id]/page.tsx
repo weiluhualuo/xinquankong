@@ -1,3 +1,5 @@
+﻿export const dynamic = "force-dynamic";
+
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getPost } from "../../../lib/api";
@@ -34,7 +36,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
               </div>
               <div>
                 <div className="font-semibold text-slate-900">{post.author.displayName}</div>
-                <div className="text-xs text-slate-500">{post.metrics.views} 次浏览</div>
+                <div className="text-xs text-slate-500">{post.metrics.views} 娆℃祻瑙?/div>
               </div>
             </div>
 
@@ -46,7 +48,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
 
             {post.coverImageUrl ? (
               <div className="relative mb-10 aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-                <Image src={post.coverImageUrl} alt="帖子封面" fill className="object-cover" sizes="100vw" />
+                <Image src={post.coverImageUrl} alt="甯栧瓙灏侀潰" fill className="object-cover" sizes="100vw" />
               </div>
             ) : null}
 
@@ -58,7 +60,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
               <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {post.images.map((image) => (
                   <div key={image.id} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                    <Image src={image.imageUrl} alt="帖子配图" fill className="object-cover transition-transform duration-500 hover:scale-105" sizes="(max-width: 768px) 100vw, 50vw" />
+                    <Image src={image.imageUrl} alt="甯栧瓙閰嶅浘" fill className="object-cover transition-transform duration-500 hover:scale-105" sizes="(max-width: 768px) 100vw, 50vw" />
                   </div>
                 ))}
               </div>
@@ -71,3 +73,4 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
     </div>
   );
 }
+

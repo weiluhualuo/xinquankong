@@ -1,3 +1,5 @@
+﻿export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import { PostCard } from "../../../components/post-card";
 import { BoardActions } from "../../../components/board-actions";
@@ -40,15 +42,15 @@ export default async function BoardDetailPage({ params }: { params: Promise<{ sl
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="mb-8 flex items-center justify-between border-b border-slate-200 pb-4">
           <div className="flex gap-6">
-            <span className="-mb-[18px] border-b-2 border-slate-900 pb-4 text-sm font-bold text-slate-900">最新动态</span>
+            <span className="-mb-[18px] border-b-2 border-slate-900 pb-4 text-sm font-bold text-slate-900">鏈€鏂板姩鎬?/span>
           </div>
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white px-6 py-4 shadow-sm md:px-10">
           {board.posts.length === 0 ? (
             <div className="py-24 text-center">
-              <h3 className="mb-2 text-lg font-bold text-slate-900">板块还在冷启动</h3>
-              <p className="text-slate-500">做第一个在这里留下足迹的人吧。</p>
+              <h3 className="mb-2 text-lg font-bold text-slate-900">鏉垮潡杩樺湪鍐峰惎鍔?/h3>
+              <p className="text-slate-500">鍋氱涓€涓湪杩欓噷鐣欎笅瓒宠抗鐨勪汉鍚с€?/p>
             </div>
           ) : (
             board.posts.map((post) => <PostCard key={post.id} post={post} />)
@@ -58,3 +60,4 @@ export default async function BoardDetailPage({ params }: { params: Promise<{ sl
     </div>
   );
 }
+

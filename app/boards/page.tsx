@@ -1,4 +1,6 @@
-﻿import Link from "next/link";
+﻿export const dynamic = "force-dynamic";
+
+import Link from "next/link";
 import { getBoards, getTags } from "../../lib/api";
 
 export default async function BoardsPage() {
@@ -62,4 +64,5 @@ export default async function BoardsPage() {
     </div>
   );
 }
+
 
