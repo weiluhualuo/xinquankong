@@ -40,15 +40,15 @@ export default async function BoardDetailPage({ params }: { params: Promise<{ sl
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="mb-8 flex items-center justify-between border-b border-slate-200 pb-4">
           <div className="flex gap-6">
-            <span className="-mb-[18px] border-b-2 border-slate-900 pb-4 text-sm font-bold text-slate-900">×îĞÂ¶¯Ì¬</span>
+            <span className="-mb-[18px] border-b-2 border-slate-900 pb-4 text-sm font-bold text-slate-900">æœ€æ–°åŠ¨æ€</span>
           </div>
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white px-6 py-4 shadow-sm md:px-10">
           {board.posts.length === 0 ? (
             <div className="py-24 text-center">
-              <h3 className="mb-2 text-lg font-bold text-slate-900">°å¿é»¹ÔÚÀäÆô¶¯</h3>
-              <p className="text-slate-500">×öµÚÒ»¸öÔÚÕâÀïÁôÏÂ×ã¼£µÄÈË°É¡£</p>
+              <h3 className="mb-2 text-lg font-bold text-slate-900">æ¿å—è¿˜åœ¨å†·å¯åŠ¨</h3>
+              <p className="text-slate-500">åšç¬¬ä¸€ä¸ªåœ¨è¿™é‡Œç•™ä¸‹è¶³è¿¹çš„äººå§ã€‚</p>
             </div>
           ) : (
             board.posts.map((post) => <PostCard key={post.id} post={post} />)
