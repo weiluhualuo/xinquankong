@@ -113,11 +113,11 @@ export async function getPosts(sort: "latest" | "hot" | "following" = "latest"):
 }
 
 export async function getBoard(slug: string): Promise<BoardDetail | null> {
-  return requestJson<BoardDetail>(`/boards/${slug}`, {}, () => getMockBoard(slug));
+  return requestJson<BoardDetail | null>(`/boards/${slug}`, {}, () => getMockBoard(slug));
 }
 
 export async function getPost(id: string): Promise<PostDetail | null> {
-  return requestJson<PostDetail>(`/posts/${id}`, {}, () => getMockPost(id));
+  return requestJson<PostDetail | null>(`/posts/${id}`, {}, () => getMockPost(id));
 }
 
 export async function getTags(): Promise<TagSummary[]> {
@@ -298,6 +298,7 @@ export async function updateInviteCode(
 export async function deleteInviteCode(inviteCodeId: string) {
   return deleteJson<{ ok: true; id: string }>(`/admin/invite-codes/${inviteCodeId}`);
 }
+
 
 
 
