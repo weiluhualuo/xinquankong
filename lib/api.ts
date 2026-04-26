@@ -1,4 +1,4 @@
-import {
+﻿import {
   getMockBoard,
   getMockBoards,
   getMockMe,
@@ -13,19 +13,37 @@ import {
   AdminPostRecord,
   AdminStats,
   AdminUserRecord,
-  AuthUser,
   BoardDetail,
   BoardSummary,
   Comment,
   PagedPosts,
   PostDetail,
-  PostSummary,
   ReportSummary,
   TagSummary,
   UserProfile
 } from "./types";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+export const AUTH_TOKEN_KEY = "xinquankong.auth.token";
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  profile?: {
+    displayName: string;
+    bio?: string | null;
+    avatarUrl?: string | null;
+    joinedLabel?: string | null;
+  } | null;
+}
+
+export interface AuthResult {
+  token: string;
+  user: AuthUser;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -34,6 +52,26 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
     this.status = status;
+  }
+}
+
+function getStoredAuthToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function setStoredAuthToken(token: string) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+  }
+}
+
+export function clearStoredAuthToken() {
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
   }
 }
 
@@ -57,12 +95,14 @@ async function requestJson<T>(
   fallback?: () => T | Promise<T>
 ): Promise<T> {
   try {
+    const authToken = getStoredAuthToken();
     const response = await fetch(`${API_BASE_URL}${path}`, {
       credentials: "include",
       cache: "no-store",
       ...init,
       headers: {
         "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         ...(init.headers ?? {})
       }
     });
@@ -129,11 +169,11 @@ export async function getMe(): Promise<UserProfile | null> {
 }
 
 export async function loginUser(payload: { username: string; password: string }) {
-  return postJson<AuthUser>("/auth/login", payload);
+  return postJson<AuthResult>("/auth/login", payload);
 }
 
 export async function registerUser(payload: { username: string; password: string; inviteCode: string; displayName?: string }) {
-  return postJson<AuthUser>("/auth/register", payload);
+  return postJson<AuthResult>("/auth/register", payload);
 }
 
 export async function logoutUser() {
@@ -298,9 +338,3 @@ export async function updateInviteCode(
 export async function deleteInviteCode(inviteCodeId: string) {
   return deleteJson<{ ok: true; id: string }>(`/admin/invite-codes/${inviteCodeId}`);
 }
-
-
-
-
-
-
