@@ -1,4 +1,4 @@
-﻿import {
+import {
   getMockBoard,
   getMockBoards,
   getMockMe,

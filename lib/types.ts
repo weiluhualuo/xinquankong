@@ -1,4 +1,4 @@
-﻿export interface BoardSummary {
+export interface BoardSummary {
   id: string;
   slug: string;
   name: string;

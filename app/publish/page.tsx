@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import { PublishForm } from "../../components/publish-form";
 import { getBoards, getTags } from "../../lib/api";

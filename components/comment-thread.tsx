@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Comment } from "../lib/types";
 
