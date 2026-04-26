@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -377,7 +377,7 @@ export function AdminDashboard() {
                 <div className="inline-flex rounded-full border border-sky-300/20 bg-sky-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-200">
                   Admin Control Center
                 </div>
-                <h1 className="mt-4 text-4xl font-black tracking-tight text-white md:text-5xl">新泉空后台管理面板</h1>
+                <h1 className="mt-4 text-4xl font-black tracking-tight text-white md:text-5xl">新权空后台管理面板</h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
                   这里把统计、举报、帖子、用户、板块和邀请码放进同一个工作台。所有操作都直接命中后端
                   API，适合你本地联调和后续继续扩展。
@@ -1035,6 +1035,7 @@ export function AdminDashboard() {
     </div>
   );
 }
+
 
 
 

@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { SiteHeader } from "../components/site-header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "新泉空 | 泛兴趣论坛",
+  title: "新权空 | 泛兴趣论坛",
   description: "一个以公开发帖讨论为核心的泛兴趣论坛。"
 };
 
@@ -19,3 +19,4 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     </html>
   );
 }
+

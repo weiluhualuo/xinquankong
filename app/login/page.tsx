@@ -1,4 +1,4 @@
-import { LoginForm } from "../../components/login-form";
+﻿import { LoginForm } from "../../components/login-form";
 import { BackgroundEffect } from "../../components/background-effect";
 
 export default function LoginPage() {
@@ -7,8 +7,11 @@ export default function LoginPage() {
       {/* 动态背景效果 - 鼠标跟踪 */}
       <BackgroundEffect />
 
+      {/* 背景装饰 */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pointer-events-none z-0"></div>
+
       {/* 装饰网格 */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none z-10"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none z-10"></div>
 
       {/* 漂浮粒子 */}
       <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-blue-400/40 animate-float pointer-events-none z-10" style={{ animationDelay: '0.5s' }}></div>
@@ -30,25 +33,23 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-3xl font-extrabold tracking-tight text-white mb-3">
-            欢迎来到新泉空
+            欢迎来到新权空
           </h1>
           <p className="text-slate-400 text-sm max-w-sm mx-auto">
             V1 阶段使用邀请码注册，联系管理员获取
           </p>
         </div>
 
-        {/* 表单卡片 */}
-        <div className="relative">
-          {/* 卡片光效边框 - 动态渐变 */}
-          <div className="absolute -inset-px rounded-2xl bg-gradient-to-r from-blue-500/40 via-cyan-400/40 to-blue-500/40 animate-shimmer opacity-60 pointer-events-none" style={{ backgroundSize: '200% 100%' }}></div>
-
-          <div className="relative bg-slate-800/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl shadow-black/40">
+        {/* 表单卡片 - 高对比度设计 */}
+        <div className="relative p-[3px] rounded-2xl bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 shadow-xl shadow-blue-500/40">
+          <div className="absolute -inset-3 rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-400/20 to-blue-500/20 blur-lg"></div>
+          <div className="relative bg-white rounded-xl p-8 shadow-2xl">
             <LoginForm />
           </div>
         </div>
 
         {/* 底部提示 */}
-        <p className="text-center text-xs text-slate-500 mt-6">
+        <p className="text-center text-xs text-slate-400 mt-6">
           登录即表示同意我们的
           <a href="#" className="text-blue-400 hover:text-blue-300 mx-1">服务条款</a>
           和
@@ -58,3 +59,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

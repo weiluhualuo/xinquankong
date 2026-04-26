@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { BoardPanel } from "../components/board-panel";
@@ -41,7 +41,7 @@ export default async function HomePage() {
           </div>
 
           <p className="max-w-2xl animate-slide-up text-lg font-medium leading-relaxed text-slate-600 md:text-xl" style={{ animationDelay: "0.1s" }}>
-            新泉空的 v1 只做最核心的论坛动作：板块浏览、图文发帖、评论回复、收藏与审核。推荐算法暂时后置，把内容结构先做扎实。
+            新权空的 v1 只做最核心的论坛动作：板块浏览、图文发帖、评论回复、收藏与审核。推荐算法暂时后置，把内容结构先做扎实。
           </p>
 
           <div className="flex flex-wrap gap-4 pt-4 animate-slide-up" style={{ animationDelay: "0.2s" }}>
@@ -147,3 +147,4 @@ export default async function HomePage() {
     </div>
   );
 }
+

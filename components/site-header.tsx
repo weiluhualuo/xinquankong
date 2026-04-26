@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -27,7 +27,7 @@ export function SiteHeader() {
               <span className="relative z-10">XQK</span>
             </span>
             <span className="hidden font-bold sm:inline-block">
-              <span className="text-white">新泉空</span>
+              <span className="text-white">新权空</span>
               <span className="text-xs text-slate-400 font-normal ml-1.5">泛兴趣论坛</span>
             </span>
           </Link>
@@ -144,3 +144,4 @@ export function SiteHeader() {
     </header>
   );
 }
+

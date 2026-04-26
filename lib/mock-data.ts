@@ -1,4 +1,4 @@
-import {
+﻿import {
   AdminBoardRecord,
   AdminInviteCodeSummary,
   AdminPostRecord,
@@ -63,7 +63,7 @@ const tags: TagSummary[] = [
 const posts: PostDetail[] = [
   {
     id: "seed-welcome-post",
-    title: "欢迎来到新泉空：先从你最近的兴趣坑开始聊",
+    title: "欢迎来到新权空：先从你最近的兴趣坑开始聊",
     excerpt: "这里先不卷关系链，先把能让人停下来阅读和回复的帖子做好。",
     type: "SHARE",
     status: "PUBLISHED",
@@ -540,3 +540,4 @@ export function getMockAdminBoards() {
 export function getMockAdminInviteCodes() {
   return inviteCodes;
 }
+
