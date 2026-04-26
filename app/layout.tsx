@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { SiteHeader } from "../components/site-header";
 import "./globals.css";
 
