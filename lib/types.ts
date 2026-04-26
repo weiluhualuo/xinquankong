@@ -1,4 +1,4 @@
-export interface BoardSummary {
+﻿export interface BoardSummary {
   id: string;
   slug: string;
   name: string;
@@ -11,6 +11,7 @@ export interface BoardSummary {
 
 export interface BoardDetail extends BoardSummary {
   posts: PostSummary[];
+  isFollowing?: boolean;
 }
 
 export interface UserProfile {
@@ -89,6 +90,46 @@ export interface PagedPosts {
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface MyActivity {
+  summary: {
+    posts: number;
+    comments: number;
+    favorites: number;
+    follows: number;
+  };
+  recentPosts: PostSummary[];
+  recentComments: {
+    id: string;
+    content: string;
+    isDeleted: boolean;
+    createdAt: string;
+    post: {
+      id: string;
+      title: string;
+      board: {
+        id: string;
+        slug: string;
+        name: string;
+        color: string;
+      };
+    };
+  }[];
+  favoritePosts: {
+    createdAt: string;
+    post: PostSummary;
+  }[];
+  followedBoards: {
+    id: string;
+    slug: string;
+    name: string;
+    color: string;
+    description: string;
+    followedAt: string;
+    postCount: number;
+    followerCount: number;
+  }[];
 }
 
 export interface ReportSummary {
@@ -264,18 +305,3 @@ export interface AdminInviteCodeBatchResult {
   count: number;
   items: AdminInviteCodeSummary[];
 }
-
-export interface AuthUser {
-  id: string;
-  username: string;
-  role: string;
-  status: string;
-  createdAt: string;
-  profile?: {
-    displayName: string;
-    bio?: string | null;
-    avatarUrl?: string | null;
-    joinedLabel?: string | null;
-  } | null;
-}
-

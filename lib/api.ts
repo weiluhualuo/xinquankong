@@ -1,4 +1,4 @@
-import {
+﻿import {
   getMockBoard,
   getMockBoards,
   getMockMe,
@@ -16,6 +16,7 @@ import {
   BoardDetail,
   BoardSummary,
   Comment,
+  MyActivity,
   PagedPosts,
   PostDetail,
   ReportSummary,
@@ -25,6 +26,7 @@ import {
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 export const AUTH_TOKEN_KEY = "xinquankong.auth.token";
+const ENABLE_MOCKS = process.env.NEXT_PUBLIC_ENABLE_MOCKS === "true";
 
 export interface AuthUser {
   id: string;
@@ -145,27 +147,31 @@ function deleteJson<T>(path: string) {
 }
 
 export async function getBoards(): Promise<BoardSummary[]> {
-  return requestJson<BoardSummary[]>("/boards", {}, () => getMockBoards());
+  return requestJson<BoardSummary[]>("/boards", {}, ENABLE_MOCKS ? () => getMockBoards() : undefined);
 }
 
 export async function getPosts(sort: "latest" | "hot" | "following" = "latest"): Promise<PagedPosts> {
-  return requestJson<PagedPosts>(`/posts?sort=${sort}`, {}, () => getMockPosts(sort));
+  return requestJson<PagedPosts>(`/posts?sort=${sort}`, {}, ENABLE_MOCKS ? () => getMockPosts(sort) : undefined);
 }
 
 export async function getBoard(slug: string): Promise<BoardDetail | null> {
-  return requestJson<BoardDetail | null>(`/boards/${slug}`, {}, () => getMockBoard(slug));
+  return requestJson<BoardDetail | null>(`/boards/${slug}`, {}, ENABLE_MOCKS ? () => getMockBoard(slug) : undefined);
 }
 
 export async function getPost(id: string): Promise<PostDetail | null> {
-  return requestJson<PostDetail | null>(`/posts/${id}`, {}, () => getMockPost(id));
+  return requestJson<PostDetail | null>(`/posts/${id}`, {}, ENABLE_MOCKS ? () => getMockPost(id) : undefined);
 }
 
 export async function getTags(): Promise<TagSummary[]> {
-  return requestJson<TagSummary[]>("/tags", {}, () => getMockTags());
+  return requestJson<TagSummary[]>("/tags", {}, ENABLE_MOCKS ? () => getMockTags() : undefined);
 }
 
 export async function getMe(): Promise<UserProfile | null> {
-  return requestJson<UserProfile>("/auth/me", {}, () => getMockMe());
+  return requestJson<UserProfile>("/auth/me", {}, ENABLE_MOCKS ? () => getMockMe() : undefined);
+}
+
+export async function getMyActivity(limit = 10) {
+  return requestJson<MyActivity>(`/me/activity?limit=${limit}`);
 }
 
 export async function loginUser(payload: { username: string; password: string }) {
@@ -269,10 +275,7 @@ export async function rejectReport(reportId: string, note?: string) {
 }
 
 export async function resolveReportAndHidePost(reportId: string, note?: string) {
-  return postJson<{ report: ReportSummary; post: AdminPostRecord }>(
-    `/admin/reports/${reportId}/resolve-and-hide-post`,
-    note ? { note } : {}
-  );
+  return postJson<{ report: ReportSummary; post: AdminPostRecord }>(`/admin/reports/${reportId}/resolve-and-hide-post`, note ? { note } : {});
 }
 
 export async function hidePost(postId: string, note?: string) {
@@ -299,10 +302,7 @@ export async function createBoard(payload: { slug: string; name: string; descrip
   return postJson<AdminBoardRecord>("/admin/boards", payload);
 }
 
-export async function updateBoard(
-  boardId: string,
-  payload: Partial<{ slug: string; name: string; description: string; color: string }>
-) {
+export async function updateBoard(boardId: string, payload: Partial<{ slug: string; name: string; description: string; color: string }>) {
   return patchJson<AdminBoardRecord>(`/admin/boards/${boardId}`, payload);
 }
 
@@ -310,28 +310,15 @@ export async function deleteBoard(boardId: string) {
   return deleteJson<{ ok: true; id: string }>(`/admin/boards/${boardId}`);
 }
 
-export async function createInviteCode(payload: {
-  code?: string;
-  note?: string;
-  maxUses?: number;
-  isActive?: boolean;
-}) {
+export async function createInviteCode(payload: { code?: string; note?: string; maxUses?: number; isActive?: boolean }) {
   return postJson<AdminInviteCodeSummary>("/admin/invite-codes", payload);
 }
 
-export async function createInviteCodeBatch(payload: {
-  count: number;
-  note?: string;
-  maxUses?: number;
-  isActive?: boolean;
-}) {
+export async function createInviteCodeBatch(payload: { count: number; note?: string; maxUses?: number; isActive?: boolean }) {
   return postJson<AdminInviteCodeBatchResult>("/admin/invite-codes/batch", payload);
 }
 
-export async function updateInviteCode(
-  inviteCodeId: string,
-  payload: Partial<{ code: string; note: string; maxUses: number; isActive: boolean }>
-) {
+export async function updateInviteCode(inviteCodeId: string, payload: Partial<{ code: string; note: string; maxUses: number; isActive: boolean }>) {
   return patchJson<AdminInviteCodeSummary>(`/admin/invite-codes/${inviteCodeId}`, payload);
 }
 
