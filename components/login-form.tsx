@@ -5,15 +5,48 @@ import { useState } from "react";
 import { ApiError, clearStoredAuthToken, loginUser, registerUser, setStoredAuthToken } from "../lib/api";
 
 function extractMessage(error: unknown) {
-  if (error instanceof ApiError) {
-    return error.message;
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "请求失败，请稍后再试。";
+}
+
+function getValidationMessage(name: string, value: string, minLength?: number) {
+  const trimmed = value.trim();
+
+  if (name === "username") {
+    if (!trimmed) return "请输入用户名";
+    if (minLength && trimmed.length < minLength) return "用户名至少 3 个字符";
+    return "";
   }
 
-  if (error instanceof Error) {
-    return error.message;
+  if (name === "password") {
+    if (!value) return "请输入密码";
+    if (minLength && value.length < minLength) return "密码至少 6 个字符";
+    return "";
   }
 
-  return "请求失败，请稍后重试";
+  if (name === "confirmPassword") {
+    if (!value) return "请再次输入密码";
+    if (minLength && value.length < minLength) return "确认密码至少 6 个字符";
+    return "";
+  }
+
+  if (name === "inviteCode") {
+    if (!trimmed) return "请输入邀请码";
+    return "";
+  }
+
+  return "";
+}
+
+function applyValidationMessage(event: React.InvalidEvent<HTMLInputElement>) {
+  const target = event.currentTarget;
+  const minLength = typeof target.minLength === "number" && target.minLength > 0 ? target.minLength : undefined;
+  target.setCustomValidity(getValidationMessage(target.name, target.value, minLength));
+}
+
+function clearValidationMessage(event: React.FormEvent<HTMLInputElement>) {
+  event.currentTarget.setCustomValidity("");
 }
 
 export function LoginForm() {
@@ -83,9 +116,7 @@ export function LoginForm() {
         />
         <button
           type="button"
-          className={`z-10 flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
-            mode === "login" ? "text-blue-600" : "text-slate-500 hover:text-slate-700"
-          }`}
+          className={`z-10 flex-1 rounded-lg py-2.5 text-sm font-semibold ${mode === "login" ? "text-slate-900" : "text-slate-500"}`}
           onClick={() => {
             setMode("login");
             setError("");
@@ -96,9 +127,7 @@ export function LoginForm() {
         </button>
         <button
           type="button"
-          className={`z-10 flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
-            mode === "register" ? "text-blue-600" : "text-slate-500 hover:text-slate-700"
-          }`}
+          className={`z-10 flex-1 rounded-lg py-2.5 text-sm font-semibold ${mode === "register" ? "text-slate-900" : "text-slate-500"}`}
           onClick={() => {
             setMode("register");
             setError("");
@@ -110,50 +139,87 @@ export function LoginForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && <div className="animate-shake rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-600">{error}</div>}
-        {success && <div className="animate-fade-in rounded-lg border border-green-100 bg-green-50 p-3 text-sm font-medium text-green-600">{success}</div>}
+        {error && <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700">{error}</div>}
+        {success && <div className="rounded-lg border border-[var(--border)] bg-[var(--accent)] p-3 text-sm font-medium text-[var(--accent-foreground)]">{success}</div>}
 
         <div className="space-y-4">
-          <div className="group relative">
-            <label className="mb-1.5 block text-sm font-semibold text-slate-700 transition-colors group-focus-within:text-blue-600">用户名</label>
-            <input type="text" name="username" required minLength={3} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="设置你的用户名" />
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">用户名</label>
+            <input
+              type="text"
+              name="username"
+              required
+              minLength={3}
+              onInvalid={applyValidationMessage}
+              onInput={clearValidationMessage}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]"
+              placeholder="设置你的用户名"
+            />
           </div>
 
           {mode === "register" && (
-            <div className="group relative">
-              <label className="mb-1.5 block text-sm font-semibold text-slate-700 transition-colors group-focus-within:text-blue-600">显示昵称</label>
-              <input type="text" name="displayName" maxLength={30} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="可选，不填则默认使用用户名" />
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">显示名称</label>
+              <input
+                type="text"
+                name="displayName"
+                maxLength={30}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]"
+                placeholder="可选，不填则默认使用用户名"
+              />
             </div>
           )}
 
-          <div className="group relative">
-            <label className="mb-1.5 block text-sm font-semibold text-slate-700 transition-colors group-focus-within:text-blue-600">密码</label>
-            <input type="password" name="password" required minLength={6} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder={mode === "login" ? "输入你的密码" : "设置登录密码"} />
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">密码</label>
+            <input
+              type="password"
+              name="password"
+              required
+              minLength={6}
+              onInvalid={applyValidationMessage}
+              onInput={clearValidationMessage}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]"
+              placeholder={mode === "login" ? "输入你的密码" : "设置登录密码"}
+            />
           </div>
 
           {mode === "register" && (
             <>
-              <div className="group relative">
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700 transition-colors group-focus-within:text-blue-600">确认密码</label>
-                <input type="password" name="confirmPassword" required minLength={6} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="再次输入密码" />
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">确认密码</label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  required
+                  minLength={6}
+                  onInvalid={applyValidationMessage}
+                  onInput={clearValidationMessage}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]"
+                  placeholder="再次输入密码"
+                />
               </div>
-
-              <div className="group relative">
-                <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-slate-700 transition-colors group-focus-within:text-blue-600">邀请码</label>
-                <div className="relative">
-                  <input type="text" name="inviteCode" required className="w-full rounded-xl border border-blue-200/50 bg-gradient-to-r from-blue-50/50 to-cyan-50/30 px-4 py-3 font-mono text-sm uppercase tracking-wider transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="输入邀请码" />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 animate-pulse text-xs font-medium text-blue-400">必填</span>
-                </div>
-                <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-400">V1 阶段需要邀请码注册，联系管理员获取</p>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">邀请码</label>
+                <input
+                  type="text"
+                  name="inviteCode"
+                  required
+                  onInvalid={applyValidationMessage}
+                  onInput={clearValidationMessage}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 font-mono text-sm uppercase tracking-wider focus:border-[var(--primary-strong)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]"
+                  placeholder="输入邀请码"
+                />
+                <p className="mt-1.5 text-xs text-slate-400">当前注册需要邀请码。</p>
               </div>
             </>
           )}
         </div>
 
-        {mode === "login" && <div className="text-right"><span className="text-xs text-slate-400">管理员登录后可进入完整后台</span></div>}
+        {mode === "login" && <div className="text-right text-xs text-slate-400">管理员登录后会自动跳转到后台。</div>}
 
-        <button type="submit" disabled={isLoading} className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-8 font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-blue-500/50 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-blue-500/30">
-          {isLoading ? "处理中..." : mode === "login" ? "登录" : "注册"}
+        <button type="submit" disabled={isLoading} className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-slate-900 bg-slate-900 px-8 font-semibold text-white disabled:opacity-50">
+          {isLoading ? "提交中..." : mode === "login" ? "登录" : "注册"}
         </button>
       </form>
     </div>

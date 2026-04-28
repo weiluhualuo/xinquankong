@@ -4,14 +4,15 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --primary: #0ea5e9;
-  --primary-foreground: #ffffff;
-  --accent: #f0f9ff;
-  --accent-foreground: #0284c7;
+  --foreground: #111111;
+  --muted: #f7f9fc;
+  --muted-foreground: #5f6b7a;
+  --border: #dbe5f0;
+  --primary: #9fc4ea;
+  --primary-strong: #6ea9df;
+  --primary-foreground: #111111;
+  --accent: #eef5fc;
+  --accent-foreground: #26415e;
 }
 
 * {
@@ -20,30 +21,30 @@
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background:
+    radial-gradient(circle at top, rgba(159, 196, 234, 0.16), transparent 38%),
+    linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* 滚动条美化 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #eef3f8;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #94a3b8, #cbd5e1);
+  background: linear-gradient(180deg, #9fb8d4, #d2deeb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #64748b, #94a3b8);
+  background: linear-gradient(180deg, #7f9fbe, #b7cddd);
 }
 
-/* 动画优化 */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -55,11 +56,10 @@ body {
 
 .animate-shimmer {
   animation: shimmer 2s infinite linear;
-  background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(159, 196, 234, 0.16), transparent);
   background-size: 200% 100%;
 }
 
-/* 抖动动画 - 错误提示 */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }

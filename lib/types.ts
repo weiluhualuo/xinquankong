@@ -1,4 +1,4 @@
-﻿export interface BoardSummary {
+export interface BoardSummary {
   id: string;
   slug: string;
   name: string;
@@ -305,3 +305,48 @@ export interface AdminInviteCodeBatchResult {
   count: number;
   items: AdminInviteCodeSummary[];
 }
+
+export interface AdminTagRecord {
+  id: string;
+  slug: string;
+  name: string;
+  createdAt: string;
+  _count?: {
+    posts: number;
+  };
+}
+export interface AnnouncementRecord {
+  id: string;
+  title: string;
+  content: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminAnnouncementRecord extends AnnouncementRecord {}
+
+export interface HomepageContentRecord {
+  id: string;
+  heroBadge: string;
+  heroTitle: string;
+  heroDescription: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminHomepageContentRecord extends HomepageContentRecord {}
+
+export interface PostTypeOptionRecord {
+  id: string;
+  value: string;
+  label: string;
+  description?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminPostTypeOptionRecord extends PostTypeOptionRecord {}

@@ -1,178 +1,160 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { ApiError, createPostComment, getPost, togglePostFavorite, togglePostLike } from "../lib/api";
-import { Comment, PostDetail } from "../lib/types";
+import { useState } from "react";
+import { createPostComment, getStoredAuthToken, togglePostFavorite, togglePostLike } from "../lib/api";
+import type { Comment, PostDetail } from "../lib/types";
 import { CommentThread } from "./comment-thread";
 
-function getErrorMessage(error: unknown) {
-  if (error instanceof ApiError) {
-    return error.message;
+function requireLogin() {
+  if (typeof window !== "undefined") {
+    window.location.href = "/login";
   }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "操作失败，请稍后重试";
 }
 
 export function PostInteractions({ post }: { post: PostDetail }) {
-  const router = useRouter();
   const [liked, setLiked] = useState(Boolean(post.isLiked));
   const [favorited, setFavorited] = useState(Boolean(post.isFavorited));
   const [likes, setLikes] = useState(post.metrics.likes);
+  const [favorites, setFavorites] = useState(post.isFavorited ? 1 : 0);
   const [comments, setComments] = useState<Comment[]>(post.comments);
-  const [commentValue, setCommentValue] = useState("");
-  const [loadingAction, setLoadingAction] = useState<"like" | "favorite" | "comment" | "">("");
+  const [commentContent, setCommentContent] = useState("");
   const [error, setError] = useState("");
+  const [busyAction, setBusyAction] = useState<"like" | "favorite" | "comment" | "">("");
 
-  useEffect(() => {
-    const syncPostState = async () => {
-      try {
-        const latest = await getPost(post.id);
-        if (!latest) {
-          return;
-        }
+  const commentCount = comments.length;
 
-        setLiked(Boolean(latest.isLiked));
-        setFavorited(Boolean(latest.isFavorited));
-        setLikes(latest.metrics.likes);
-        setComments(latest.comments);
-      } catch {
-        // keep server-rendered fallback state
-      }
-    };
-
-    void syncPostState();
-  }, [post.id]);
-
-  const handleLike = async () => {
-    setLoadingAction("like");
-    setError("");
-
-    try {
-      const result = await togglePostLike(post.id);
-      setLiked(result.liked);
-      setLikes((current) => Math.max(current + (result.liked ? 1 : -1), 0));
-      router.refresh();
-    } catch (actionError) {
-      setError(getErrorMessage(actionError));
-    } finally {
-      setLoadingAction("");
+  const ensureLogin = () => {
+    if (!getStoredAuthToken()) {
+      requireLogin();
+      return false;
     }
+
+    return true;
   };
 
-  const handleFavorite = async () => {
-    setLoadingAction("favorite");
-    setError("");
-
-    try {
-      const result = await togglePostFavorite(post.id);
-      setFavorited(result.favorited);
-      router.refresh();
-    } catch (actionError) {
-      setError(getErrorMessage(actionError));
-    } finally {
-      setLoadingAction("");
-    }
-  };
-
-  const handleComment = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (commentValue.trim().length < 2) {
-      setError("评论至少 2 个字符");
+  const handleToggleLike = async () => {
+    if (!ensureLogin()) {
       return;
     }
 
-    setLoadingAction("comment");
+    setBusyAction("like");
     setError("");
-
     try {
-      const created = await createPostComment(post.id, commentValue.trim());
-      setComments((current) => [...current, created]);
-      setCommentValue("");
-      router.refresh();
-    } catch (actionError) {
-      setError(getErrorMessage(actionError));
+      const result = await togglePostLike(post.id);
+      setLiked(result.liked);
+      setLikes((current) => Math.max(0, current + (result.liked ? 1 : -1)));
+    } catch (toggleError) {
+      setError(toggleError instanceof Error ? toggleError.message : "点赞失败");
     } finally {
-      setLoadingAction("");
+      setBusyAction("");
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!ensureLogin()) {
+      return;
+    }
+
+    setBusyAction("favorite");
+    setError("");
+    try {
+      const result = await togglePostFavorite(post.id);
+      setFavorited(result.favorited);
+      setFavorites((current) => Math.max(0, current + (result.favorited ? 1 : -1)));
+    } catch (toggleError) {
+      setError(toggleError instanceof Error ? toggleError.message : "收藏失败");
+    } finally {
+      setBusyAction("");
+    }
+  };
+
+  const handleCommentSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const content = commentContent.trim();
+    if (!content) {
+      setError("请输入评论内容");
+      return;
+    }
+
+    if (!ensureLogin()) {
+      return;
+    }
+
+    setBusyAction("comment");
+    setError("");
+    try {
+      // Author: 花落 | MIT License. Keep the client comment list responsive after submission.
+      const created = await createPostComment(post.id, content);
+      setComments((current) => [created, ...current]);
+      setCommentContent("");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "评论失败");
+    } finally {
+      setBusyAction("");
     }
   };
 
   return (
-    <aside className="shrink-0 space-y-6 lg:w-96">
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 text-xs font-bold uppercase tracking-wider text-slate-400">互动概览</h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 text-center">
-            <div className="mb-1 text-3xl font-black text-blue-600">{likes}</div>
-            <div className="text-xs font-medium text-slate-500">点赞</div>
+    <aside className="w-full shrink-0 lg:w-[360px]">
+      <div className="space-y-6 lg:sticky lg:top-24">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">互动数据</h2>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">点赞</div>
+              <div className="mt-2 text-2xl font-black text-slate-900">{likes}</div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">收藏</div>
+              <div className="mt-2 text-2xl font-black text-slate-900">{favorites}</div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">评论</div>
+              <div className="mt-2 text-2xl font-black text-slate-900">{commentCount}</div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">浏览</div>
+              <div className="mt-2 text-2xl font-black text-slate-900">{post.metrics.views}</div>
+            </div>
           </div>
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 text-center">
-            <div className="mb-1 text-3xl font-black text-slate-900">{comments.length}</div>
-            <div className="text-xs font-medium text-slate-500">评论</div>
+          <div className="mt-5 flex flex-col gap-3">
+            <button type="button" onClick={handleToggleLike} disabled={busyAction !== ""} className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">
+              {liked ? "取消点赞" : "点赞帖子"}
+            </button>
+            <button type="button" onClick={handleToggleFavorite} disabled={busyAction !== ""} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 disabled:opacity-50">
+              {favorited ? "取消收藏" : "收藏帖子"}
+            </button>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-4 grid gap-3">
-          <button
-            type="button"
-            disabled={loadingAction === "like"}
-            onClick={() => void handleLike()}
-            className={`w-full rounded-xl border py-3 text-sm font-bold transition-all ${
-              liked
-                ? "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-            } disabled:opacity-50`}
-          >
-            {loadingAction === "like" ? "处理中..." : liked ? "已点赞" : "点赞帖子"}
-          </button>
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-slate-900">评论区</h2>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
+              {commentCount} 条
+            </span>
+          </div>
 
-          <button
-            type="button"
-            disabled={loadingAction === "favorite"}
-            onClick={() => void handleFavorite()}
-            className={`w-full rounded-xl border py-3 text-sm font-bold transition-all ${
-              favorited
-                ? "border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-            } disabled:opacity-50`}
-          >
-            {loadingAction === "favorite" ? "处理中..." : favorited ? "已收藏" : "收藏帖子"}
-          </button>
-        </div>
+          <form onSubmit={handleCommentSubmit} className="mt-5 space-y-3">
+            <textarea
+              value={commentContent}
+              onChange={(event) => setCommentContent(event.target.value)}
+              rows={4}
+              placeholder="写下你的看法"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary-strong)] focus:bg-white"
+            />
+            <button type="submit" disabled={busyAction !== ""} className="rounded-2xl border border-[var(--primary)] bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-slate-900 disabled:opacity-50">
+              发布评论
+            </button>
+          </form>
 
-        {error && <p className="mt-4 text-xs text-red-500">{error}</p>}
-      </section>
+          {error && <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{error}</div>}
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 flex items-center justify-between text-lg font-bold text-slate-900">
-          评论区
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-normal text-slate-500">{comments.length} 条</span>
-        </h2>
-
-        <form onSubmit={handleComment} className="mb-6 space-y-3">
-          <textarea
-            value={commentValue}
-            onChange={(event) => setCommentValue(event.target.value)}
-            rows={4}
-            placeholder="写下你的评论..."
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-black"
-          />
-          <button
-            type="submit"
-            disabled={loadingAction === "comment"}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-black px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
-          >
-            {loadingAction === "comment" ? "提交中..." : "发表评论"}
-          </button>
-        </form>
-
-        <CommentThread comments={comments} />
-      </section>
+          <div className="mt-6 border-t border-slate-100 pt-6">
+            <CommentThread comments={comments} />
+          </div>
+        </section>
+      </div>
     </aside>
   );
 }
