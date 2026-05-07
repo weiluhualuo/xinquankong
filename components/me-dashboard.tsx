@@ -60,7 +60,7 @@ export function MeDashboard() {
         const [user, activityData, postsData] = await Promise.all([getMe(), getMyActivity(10), getMyPosts()]);
         setMe(user);
         setActivity(activityData);
-        setMyPosts(postsData.items);
+        setMyPosts(postsData?.items ?? []);
         if (user) {
           setForm({
             displayName: user.profile.displayName ?? "",

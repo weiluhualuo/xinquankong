@@ -35,7 +35,7 @@ export function PostCard({ post }: { post: PostSummary }) {
 
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {post.tags.map((tag) => (
+          {(post.tags ?? []).map((tag) => (
             <Link
               key={tag.id}
               href={`/tag/${tag.slug}`}
