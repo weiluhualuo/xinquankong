@@ -379,7 +379,7 @@ export function MeDashboard() {
                     <p className="mt-1 text-sm text-slate-500">查看你最近发出的帖子动态。</p>
                   </div>
                   <div className="px-8 pb-4">
-                    {!activity || activity.recentPosts.length === 0 ? (
+                    {!activity || (activity.recentPosts ?? []).length === 0 ? (
                       <div className="py-20 text-center">
                         <h3 className="mb-2 text-lg font-medium text-slate-900">暂无最近动态</h3>
                         <p className="mb-6 text-sm text-slate-500">你关注的板块最近还没有新的内容。</p>
@@ -388,7 +388,7 @@ export function MeDashboard() {
                         </Link>
                       </div>
                     ) : (
-                      activity.recentPosts.map((post) => <PostCard key={post.id} post={post} />)
+                      (activity.recentPosts ?? []).map((post) => <PostCard key={post.id} post={post} />)
                     )}
                   </div>
                 </>
@@ -475,7 +475,7 @@ export function MeDashboard() {
                     </div>
                     <div className="rounded-xl border border-slate-200 bg-white p-4">
                       <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">已邀请用户</div>
-                      <div className="mt-2 text-sm font-medium text-slate-900">{me.invitedUsers.length} 人</div>
+                      <div className="mt-2 text-sm font-medium text-slate-900">{(me.invitedUsers ?? []).length} 人</div>
                     </div>
                   </div>
 
@@ -491,11 +491,11 @@ export function MeDashboard() {
                       <h3 className="text-sm font-semibold text-slate-900">我的邀请码</h3>
                       <p className="mt-1 text-xs text-slate-500">默认每个邀请码可使用 1 次，复制后发送给被邀请人即可。</p>
                     </div>
-                    {me.inviteCodes.length === 0 ? (
+                    {(me.inviteCodes ?? []).length === 0 ? (
                       <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">你还没有生成邀请码。</div>
                     ) : (
                       <div className="space-y-3">
-                        {me.inviteCodes.map((inviteCode) => (
+                        {(me.inviteCodes ?? []).map((inviteCode) => (
                           <div key={inviteCode.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="min-w-0">
                               <div className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-slate-900">{inviteCode.code}</div>
@@ -519,11 +519,11 @@ export function MeDashboard() {
                     )}
                   </div>
 
-                  {me.invitedUsers.length > 0 && (
+                  {(me.invitedUsers ?? []).length > 0 && (
                     <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
                       <h3 className="text-sm font-semibold text-slate-900">我邀请的用户</h3>
                       <div className="mt-3 space-y-2">
-                        {me.invitedUsers.map((user) => (
+                        {(me.invitedUsers ?? []).map((user) => (
                           <div key={user.id} className="flex items-center justify-between gap-3 text-sm">
                             <div className="min-w-0">
                               <div className="font-medium text-slate-900">{user.displayName}</div>
