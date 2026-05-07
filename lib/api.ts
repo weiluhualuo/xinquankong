@@ -15,12 +15,14 @@ import {
   Comment,
   HomepageContentRecord,
   MyActivity,
+  NotificationListResult,
   PagedPosts,
   PostDetail,
   PostSummary,
   PostTypeOptionRecord,
   ReportSummary,
   TagSummary,
+  UserInviteCode,
   UserProfile
 } from "./types";
 
@@ -33,6 +35,8 @@ export interface AuthUser {
   role: string;
   status: string;
   createdAt: string;
+  level: number;
+  experience: number;
   profile?: {
     displayName: string;
     bio?: string | null;
@@ -90,6 +94,40 @@ function normalizeMessage(payload: unknown, fallback: string) {
   return fallback;
 }
 
+function tryParseJson(text: string) {
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function buildResponseError(response: Response, payload: unknown, text: string) {
+  const fallback = response.status >= 500
+    ? "后端暂时不可用，请稍后再试"
+    : `Request failed: ${response.status}`;
+
+  const normalized = normalizeMessage(payload, fallback);
+  if (normalized !== fallback) {
+    return new ApiError(response.status, normalized);
+  }
+
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return new ApiError(response.status, fallback);
+  }
+
+  if (trimmed.startsWith("<")) {
+    return new ApiError(response.status, fallback);
+  }
+
+  return new ApiError(response.status, trimmed);
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const authToken = getStoredAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -104,10 +142,18 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  const payload = tryParseJson(text);
 
   if (!response.ok) {
-    throw new ApiError(response.status, normalizeMessage(payload, `Request failed: ${response.status}`));
+    throw buildResponseError(response, payload, text);
+  }
+
+  if (!text) {
+    return null as T;
+  }
+
+  if (payload === null) {
+    throw new ApiError(response.status, "后端返回了无法解析的数据");
   }
 
   return payload as T;
@@ -178,8 +224,24 @@ export async function getMyActivity(limit = 10): Promise<MyActivity> {
   return requestJson<MyActivity>(`/me/activity?limit=${limit}`);
 }
 
-export async function getMyPosts(): Promise<PostSummary[]> {
-  return requestJson<PostSummary[]>("/me/posts");
+export async function getMyPosts(page = 1, pageSize = 12): Promise<PagedPosts> {
+  return requestJson<PagedPosts>(`/me/posts?page=${page}&pageSize=${pageSize}`);
+}
+
+export async function getMyNotifications(page = 1, pageSize = 12): Promise<NotificationListResult> {
+  return requestJson<NotificationListResult>(`/me/notifications?page=${page}&pageSize=${pageSize}`);
+}
+
+export async function getMyNotificationUnreadCount(): Promise<{ unreadCount: number }> {
+  return requestJson<{ unreadCount: number }>("/me/notifications/unread-count");
+}
+
+export async function markMyNotificationAsRead(notificationId: string) {
+  return postJson<{ ok: true; notification: unknown }>(`/me/notifications/${notificationId}/read`);
+}
+
+export async function markAllMyNotificationsAsRead() {
+  return postJson<{ ok: true; count: number; readAt: string }>("/me/notifications/read-all");
 }
 
 export async function loginUser(payload: { username: string; password: string }) {
@@ -195,8 +257,8 @@ export async function registerUser(payload: {
   return postJson<AuthResult>("/auth/register", payload);
 }
 
-export async function logoutUser() {
-  return postJson<{ ok: true }>("/auth/logout");
+export async function createMyInviteCode() {
+  return postJson<UserInviteCode>("/auth/me/invite-codes");
 }
 
 export async function createForumPost(payload: {
@@ -254,6 +316,37 @@ export async function createPostComment(postId: string, content: string) {
       } | null;
     };
   }>(`/posts/${postId}/comments`, { content });
+
+  return {
+    id: raw.id,
+    content: raw.isDeleted ? "Comment deleted" : raw.content,
+    isDeleted: raw.isDeleted,
+    createdAt: raw.createdAt,
+    author: {
+      id: raw.author.id,
+      username: raw.author.username,
+      displayName: raw.author.profile?.displayName ?? raw.author.username,
+      avatarUrl: raw.author.profile?.avatarUrl ?? null
+    },
+    replies: []
+  } as Comment;
+}
+
+export async function createCommentReply(commentId: string, content: string) {
+  const raw = await postJson<{
+    id: string;
+    content: string;
+    isDeleted: boolean;
+    createdAt: string;
+    author: {
+      id: string;
+      username: string;
+      profile?: {
+        displayName?: string | null;
+        avatarUrl?: string | null;
+      } | null;
+    };
+  }>(`/comments/${commentId}/reply`, { content });
 
   return {
     id: raw.id,

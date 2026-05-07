@@ -22,7 +22,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-white">欢迎来到新泉空</h1>
+          <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-white">欢迎来到新权空</h1>
           <p className="mx-auto max-w-sm text-sm text-slate-300">V1 阶段使用邀请码注册，请向管理员获取。</p>
         </div>
 

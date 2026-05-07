@@ -14,12 +14,51 @@ export interface BoardDetail extends BoardSummary {
   isFollowing?: boolean;
 }
 
+export interface UserProgression {
+  experience: number;
+  level: number;
+  currentLevelExperience: number;
+  nextLevelExperience: number;
+  progressInLevel: number;
+  progressSpan: number;
+}
+
+export interface UserInviteCode {
+  id: string;
+  code: string;
+  note: string | null;
+  isActive: boolean;
+  maxUses: number;
+  useCount: number;
+  remainingUses: number;
+  createdAt: string;
+  redemptionCount: number;
+}
+
+export interface UserInviteRelation {
+  id: string;
+  username: string;
+  displayName: string;
+}
+
+export interface InvitedUserSummary extends UserInviteRelation {
+  createdAt: string;
+}
+
 export interface UserProfile {
   id: string;
   username: string;
   role: string;
   status: string;
   createdAt: string;
+  level: number;
+  experience: number;
+  progression: UserProgression;
+  canGenerateInviteCode: boolean;
+  inviteRequirementLevel: number;
+  invitedBy: UserInviteRelation | null;
+  invitedUsers: InvitedUserSummary[];
+  inviteCodes: UserInviteCode[];
   profile: {
     displayName: string;
     bio: string;
@@ -254,6 +293,8 @@ export interface AdminUserRecord {
   username: string;
   role: string;
   status: string;
+  level: number;
+  experience: number;
   createdAt: string;
   updatedAt: string;
   profile?: {
@@ -334,6 +375,35 @@ export interface HomepageContentRecord {
   heroDescription: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface NotificationRecord {
+  id: string;
+  type: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+  actor: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+  } | null;
+  target: {
+    type: string;
+    id: string;
+  };
+  metadata: Record<string, unknown> | { raw: string } | null;
+}
+
+export interface NotificationListResult {
+  items: NotificationRecord[];
+  page: number;
+  pageSize: number;
+  total: number;
+  unreadCount: number;
 }
 
 export interface AdminHomepageContentRecord extends HomepageContentRecord {}

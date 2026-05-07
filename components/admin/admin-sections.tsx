@@ -15,6 +15,7 @@ import type {
   AskAdminNote,
   BatchFormState,
   BoardFormState,
+  ExportFormat,
   HomepageContentFormState,
   PostTypeFormState,
   InviteFormState,
@@ -198,7 +199,7 @@ export function UsersSection({ users, busyKey, runAction, askNote }: { users: Ad
               <div className="mt-2 text-lg font-bold">{user.profile?.displayName ?? user.username}</div>
               <div className="text-sm text-slate-500">@{user.username}</div>
               <div className="mt-2 text-sm text-slate-600">{user.profile?.bio || "暂无简介。"}</div>
-              <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500"><span>帖子 {user._count.posts}</span><span>评论 {user._count.comments}</span><span>举报 {user._count.reports}</span></div>
+              <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500"><span>Lv.{user.level}</span><span>EXP {user.experience}</span><span>帖子 {user._count.posts}</span><span>评论 {user._count.comments}</span><span>举报 {user._count.reports}</span></div>
             </div>
             <div className="flex flex-wrap gap-2 lg:justify-end">
               {user.status !== "BANNED" ? <button type="button" disabled={busyKey === `ban-${user.id}`} onClick={() => { const note = askNote("填写封禁备注（可选）"); if (note === null) return; void runAction(`ban-${user.id}`, () => banUser(user.id, note)); }} className="rounded-xl border border-slate-900 border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">封禁</button> : <button type="button" disabled={busyKey === `unban-${user.id}`} onClick={() => { const note = askNote("填写解封备注（可选）"); if (note === null) return; void runAction(`unban-${user.id}`, () => unbanUser(user.id, note)); }} className="rounded-xl border border-[var(--border)] bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-[var(--accent-foreground)] disabled:opacity-50">解封</button>}
@@ -281,6 +282,31 @@ export function TagsSection({ tags, tagForm, setTagForm, busyKey, runAction }: {
   );
 }
 
+function downloadInviteCodes(inviteCodes: AdminInviteCodeSummary[], format: ExportFormat) {
+  const activeCodes = inviteCodes.filter((invite) => invite.isActive && invite.remainingUses > 0);
+  const rows = activeCodes.map((invite) => ({
+    code: invite.code,
+    note: invite.note ?? "",
+    maxUses: invite.maxUses,
+    remainingUses: invite.remainingUses
+  }));
+
+  const content = format === "csv"
+    ? ["code,note,maxUses,remainingUses", ...rows.map((row) => `"${row.code}","${row.note.replaceAll('"', '""')}",${row.maxUses},${row.remainingUses}`)].join("\n")
+    : rows.map((row) => row.note ? `${row.code}    ${row.note}` : row.code).join("\n");
+
+  const blob = new Blob([content], { type: format === "csv" ? "text/csv;charset=utf-8" : "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 19).replaceAll(":", "-");
+  link.href = url;
+  link.download = `invite-codes-${stamp}.${format}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function InviteCodesSection({ inviteCodes, inviteForm, setInviteForm, batchForm, setBatchForm, busyKey, runAction }: { inviteCodes: AdminInviteCodeSummary[]; inviteForm: InviteFormState; setInviteForm: StateSetter<InviteFormState>; batchForm: BatchFormState; setBatchForm: StateSetter<BatchFormState>; busyKey: string; runAction: RunAdminAction; }) {
   return (
     <section className="grid gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm xl:grid-cols-[0.9fr_1.1fr]">
@@ -310,7 +336,11 @@ export function InviteCodesSection({ inviteCodes, inviteForm, setInviteForm, bat
             </div>
             <input value={batchForm.note} onChange={(event) => setBatchForm((x) => ({ ...x, note: event.target.value }))} placeholder="批量备注" className={inputClass()} />
             <label className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm"><input type="checkbox" checked={batchForm.isActive} onChange={(event) => setBatchForm((x) => ({ ...x, isActive: event.target.checked }))} />创建后启用</label>
-            <button type="submit" disabled={busyKey === "invite-batch"} className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">生成一批</button>
+            <div className="flex flex-wrap gap-2">
+              <button type="submit" disabled={busyKey === "invite-batch"} className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">生成一批</button>
+              <button type="button" onClick={() => downloadInviteCodes(inviteCodes, "txt")} disabled={inviteCodes.length === 0} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold disabled:opacity-50">导出 TXT</button>
+              <button type="button" onClick={() => downloadInviteCodes(inviteCodes, "csv")} disabled={inviteCodes.length === 0} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold disabled:opacity-50">导出 CSV</button>
+            </div>
           </div>
         </form>
       </div>

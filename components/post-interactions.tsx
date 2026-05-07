@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createPostComment, getStoredAuthToken, togglePostFavorite, togglePostLike } from "../lib/api";
+import { createCommentReply, createPostComment, getStoredAuthToken, togglePostFavorite, togglePostLike } from "../lib/api";
 import type { Comment, PostDetail } from "../lib/types";
 import { CommentThread } from "./comment-thread";
 
@@ -9,6 +9,30 @@ function requireLogin() {
   if (typeof window !== "undefined") {
     window.location.href = "/login";
   }
+}
+
+function appendReplyToComments(items: Comment[], commentId: string, reply: Comment): Comment[] {
+  return items.map((item) => {
+    if (item.id === commentId) {
+      return {
+        ...item,
+        replies: [...(item.replies ?? []), reply]
+      };
+    }
+
+    if (item.replies && item.replies.length > 0) {
+      return {
+        ...item,
+        replies: appendReplyToComments(item.replies, commentId, reply)
+      };
+    }
+
+    return item;
+  });
+}
+
+function countComments(items: Comment[]): number {
+  return items.reduce((total, item) => total + 1 + countComments(item.replies ?? []), 0);
 }
 
 export function PostInteractions({ post }: { post: PostDetail }) {
@@ -19,9 +43,10 @@ export function PostInteractions({ post }: { post: PostDetail }) {
   const [comments, setComments] = useState<Comment[]>(post.comments);
   const [commentContent, setCommentContent] = useState("");
   const [error, setError] = useState("");
-  const [busyAction, setBusyAction] = useState<"like" | "favorite" | "comment" | "">("");
+  const [busyAction, setBusyAction] = useState<"like" | "favorite" | "comment" | "reply" | "">("");
+  const [busyCommentId, setBusyCommentId] = useState("");
 
-  const commentCount = comments.length;
+  const commentCount = countComments(comments);
 
   const ensureLogin = () => {
     if (!getStoredAuthToken()) {
@@ -83,7 +108,6 @@ export function PostInteractions({ post }: { post: PostDetail }) {
     setBusyAction("comment");
     setError("");
     try {
-      // Author: 花落 | MIT License. Keep the client comment list responsive after submission.
       const created = await createPostComment(post.id, content);
       setComments((current) => [created, ...current]);
       setCommentContent("");
@@ -91,6 +115,25 @@ export function PostInteractions({ post }: { post: PostDetail }) {
       setError(submitError instanceof Error ? submitError.message : "评论失败");
     } finally {
       setBusyAction("");
+    }
+  };
+
+  const handleReplySubmit = async (commentId: string, content: string) => {
+    if (!ensureLogin()) {
+      return;
+    }
+
+    setBusyAction("reply");
+    setBusyCommentId(commentId);
+    setError("");
+    try {
+      const created = await createCommentReply(commentId, content);
+      setComments((current) => appendReplyToComments(current, commentId, created));
+    } catch (submitError) {
+      throw (submitError instanceof Error ? submitError : new Error("回复失败"));
+    } finally {
+      setBusyAction("");
+      setBusyCommentId("");
     }
   };
 
@@ -151,7 +194,7 @@ export function PostInteractions({ post }: { post: PostDetail }) {
           {error && <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{error}</div>}
 
           <div className="mt-6 border-t border-slate-100 pt-6">
-            <CommentThread comments={comments} />
+            <CommentThread comments={comments} canReply={true} busyCommentId={busyCommentId} onReply={handleReplySubmit} />
           </div>
         </section>
       </div>

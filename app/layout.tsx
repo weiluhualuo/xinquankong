@@ -3,7 +3,7 @@ import { SiteHeader } from "../components/site-header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "新泉空 | 论坛",
+  title: "新权空 | 论坛",
   description: "一个以公开讨论为核心的轻量论坛。"
 };
 

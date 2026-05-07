@@ -50,6 +50,21 @@ const me: UserProfile = {
   role: "USER",
   status: "ACTIVE",
   createdAt: "2026-04-26T09:00:00.000Z",
+  level: 2,
+  experience: 140,
+  progression: {
+    experience: 140,
+    level: 2,
+    currentLevelExperience: 100,
+    nextLevelExperience: 200,
+    progressInLevel: 40,
+    progressSpan: 100
+  },
+  canGenerateInviteCode: false,
+  inviteRequirementLevel: 3,
+  invitedBy: { id: "admin", username: "admin", displayName: "Admin" },
+  invitedUsers: [],
+  inviteCodes: [],
   profile: { displayName: "Me", bio: "Local mock profile.", avatarUrl: null, joinedLabel: "Local" }
 };
 
@@ -89,7 +104,7 @@ const adminPosts: AdminPostRecord[] = posts.map((post) => ({
 }));
 
 const adminUsers: AdminUserRecord[] = [
-  { id: "admin", username: "admin", role: "ADMIN", status: "ACTIVE", createdAt: "2026-04-26T09:00:00.000Z", updatedAt: "2026-04-26T09:00:00.000Z", profile: { displayName: "Admin", bio: "Mock admin.", avatarUrl: null, joinedLabel: "Local" }, _count: { posts: 1, comments: 1, reports: 0 } }
+  { id: "admin", username: "admin", role: "ADMIN", status: "ACTIVE", level: 5, experience: 500, createdAt: "2026-04-26T09:00:00.000Z", updatedAt: "2026-04-26T09:00:00.000Z", profile: { displayName: "Admin", bio: "Mock admin.", avatarUrl: null, joinedLabel: "Local" }, _count: { posts: 1, comments: 1, reports: 0 } }
 ];
 
 const inviteCodes: AdminInviteCodeSummary[] = [

@@ -7,6 +7,7 @@ import { clearStoredAuthToken, getMe, getStoredAuthToken } from "../lib/api";
 const publicNavItems = [
   { href: "/", label: "首页" },
   { href: "/boards", label: "板块" },
+  { href: "/notifications", label: "通知" },
   { href: "/publish", label: "发布" }
 ];
 
@@ -68,7 +69,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-3 font-semibold text-slate-900">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#111111,#2b2f35)] text-xs font-bold text-white shadow-sm">XQK</span>
-            <span className="hidden sm:inline">新泉空</span>
+            <span className="hidden sm:inline">新权空</span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (

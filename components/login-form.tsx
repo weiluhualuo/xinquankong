@@ -210,7 +210,7 @@ export function LoginForm() {
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 font-mono text-sm uppercase tracking-wider focus:border-[var(--primary-strong)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]"
                   placeholder="输入邀请码"
                 />
-                <p className="mt-1.5 text-xs text-slate-400">当前注册需要邀请码。</p>
+                <p className="mt-1.5 text-xs text-slate-400">当前注册需要邀请码，注册成功后会自动绑定邀请人。</p>
               </div>
             </>
           )}

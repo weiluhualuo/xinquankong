@@ -56,6 +56,8 @@ export type BatchFormState = {
   isActive: boolean;
 };
 
+export type ExportFormat = "txt" | "csv";
+
 export type HomepageContentFormState = {
   heroBadge: string;
   heroTitle: string;
