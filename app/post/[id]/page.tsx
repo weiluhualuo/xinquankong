@@ -1,10 +1,50 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiError, getPost } from "../../../lib/api";
+import { ImageViewer } from "../../../components/image-viewer";
 import { PostInteractions } from "../../../components/post-interactions";
+import { RichContent } from "../../../components/rich-content";
+
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  try {
+    const { id } = await params;
+    const post = await getPost(id);
+    if (!post) return { title: "帖子不存在 | 新权空" };
+
+    const description = post.excerpt || post.content.slice(0, 160);
+    const imageUrl = post.coverImageUrl || post.images[0]?.imageUrl;
+    const absoluteImage = imageUrl
+      ? imageUrl.startsWith("http") ? imageUrl : `${appUrl}${imageUrl}`
+      : undefined;
+
+    return {
+      title: `${post.title} | 新权空`,
+      description,
+      openGraph: {
+        title: post.title,
+        description,
+        type: "article",
+        publishedTime: post.createdAt,
+        authors: [post.author.displayName],
+        ...(absoluteImage ? { images: [{ url: absoluteImage }] } : {}),
+      },
+      twitter: {
+        card: absoluteImage ? "summary_large_image" : "summary",
+        title: post.title,
+        description,
+        ...(absoluteImage ? { images: [absoluteImage] } : {}),
+      },
+    };
+  } catch {
+    return { title: "帖子详情 | 新权空" };
+  }
+}
 
 function ErrorState({ message }: { message: string }) {
   return <div className="min-h-[calc(100vh-3.5rem)] bg-slate-50 px-4 py-16"><div className="mx-auto max-w-3xl rounded-3xl border border-rose-200 bg-white p-10 text-center"><h1 className="text-2xl font-bold text-slate-900">帖子详情加载失败</h1><p className="mt-3 text-sm text-slate-500">{message}</p><div className="mt-6"><Link href="/" className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-6 text-sm font-semibold text-white">返回首页</Link></div></div></div>;
@@ -59,24 +99,10 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
               ) : null}
 
               <div className="prose prose-slate max-w-none text-lg">
-                <p className="whitespace-pre-wrap leading-loose">{post.content}</p>
+                <RichContent content={post.content} />
               </div>
 
-              {post.images.length ? (
-                <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {post.images.map((image) => (
-                    <div key={image.id} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                      <Image
-                        src={image.imageUrl}
-                        alt="帖子配图"
-                        fill
-                        className="object-cover transition-transform duration-500 hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : null}
+              <ImageViewer images={post.images} />
             </div>
           </article>
 
