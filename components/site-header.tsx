@@ -94,29 +94,38 @@ export function SiteHeader() {
           )}
         </div>
 
-        <button type="button" onClick={() => setMobileOpen((v) => !v)} className="md:hidden rounded-lg p-2 text-sm font-medium text-slate-700">
-          Menu
+        <button type="button" onClick={() => setMobileOpen((v) => !v)} className="md:hidden rounded-lg p-2 text-slate-700" aria-label={mobileOpen ? "关闭菜单" : "打开菜单"}>
+          <svg className="h-6 w-6 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {mobileOpen ? (
+              <path d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
         </button>
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
-          <div className="space-y-2">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
-                {item.label}
-              </Link>
-            ))}
-            {isLoggedIn ? (
-              <>
-                <Link href="/me" onClick={() => setMobileOpen(false)} className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100">我的</Link>
-                <button onClick={() => { logout(); setMobileOpen(false); }} className="block w-full rounded-lg px-4 py-3 text-left text-sm font-medium text-rose-600 hover:bg-rose-50">退出登录</button>
-              </>
-            ) : (
-              <Link href="/login" onClick={() => setMobileOpen(false)} className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100">登录</Link>
-            )}
+        <>
+          <div className="fixed inset-0 top-14 z-40 bg-black/20 backdrop-blur-sm md:hidden" onClick={() => setMobileOpen(false)} />
+          <div className="relative z-50 border-t border-slate-200 bg-white px-4 py-4 shadow-lg md:hidden animate-slide-down">
+            <div className="space-y-1">
+              {navItems.map((item) => (
+                <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100">
+                  {item.label}
+                </Link>
+              ))}
+              {isLoggedIn ? (
+                <>
+                  <Link href="/me" onClick={() => setMobileOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100">我的</Link>
+                  <button onClick={() => { logout(); setMobileOpen(false); }} className="block w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50">退出登录</button>
+                </>
+              ) : (
+                <Link href="/login" onClick={() => setMobileOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100">登录</Link>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </header>
   );

@@ -11,7 +11,7 @@ export function AnnouncementStrip({ announcements }: { announcements: Announceme
   const marqueeText = `【${primaryAnnouncement.title}】${primaryAnnouncement.content}`;
 
   return (
-    <div className="pointer-events-none absolute right-0 top-4 z-30 w-full max-w-3xl text-slate-700 md:w-[32rem] md:translate-x-6">
+    <div className="pointer-events-none relative mb-4 md:absolute md:mb-0 right-0 top-4 z-30 w-full max-w-3xl text-slate-700 md:w-[32rem] md:translate-x-6">
       <div className="pointer-events-auto mb-3 flex justify-end">
         <span className="rounded-full border border-[var(--border)] bg-[var(--accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent-foreground)] shadow-sm backdrop-blur-sm">
           公告

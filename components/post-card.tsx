@@ -3,26 +3,26 @@ import { PostSummary } from "../lib/types";
 
 export function PostCard({ post }: { post: PostSummary }) {
   return (
-    <div className="group -mx-4 rounded-xl border-b border-slate-100 px-4 py-6 transition-all duration-300 last:border-0 hover:bg-[linear-gradient(90deg,rgba(159,196,234,0.12),transparent)]">
-      <div className="mb-3 flex items-center gap-3">
+    <div className="group -mx-4 rounded-xl border-b border-slate-100 px-4 py-5 transition-all duration-300 last:border-0 hover:bg-slate-50/80 sm:px-6">
+      <div className="mb-3 flex flex-wrap items-center gap-2 sm:gap-3">
         <Link
           href={`/board/${post.board.slug}`}
           className="rounded-md border border-[var(--border)] bg-[var(--accent)] px-2.5 py-1 text-xs font-bold text-[var(--accent-foreground)] transition hover:border-[var(--primary)] hover:bg-[rgba(159,196,234,0.22)]"
         >
           {post.board.name}
         </Link>
-        <span className="text-slate-300">·</span>
+        <span className="hidden sm:inline text-slate-300">·</span>
         <span className="text-xs font-medium text-slate-500">
           {post.author.displayName}
         </span>
-        <span className="text-slate-300">·</span>
+        <span className="hidden sm:inline text-slate-300">·</span>
         <span className="text-xs text-slate-400">
           {new Date(post.createdAt).toLocaleDateString()}
         </span>
       </div>
 
       <Link href={`/post/${post.id}`} className="block group/title">
-        <h3 className="mb-3 text-xl font-bold leading-tight text-slate-900 transition-colors duration-300 group-hover/title:text-[var(--accent-foreground)]">
+        <h3 className="mb-2 text-lg font-bold leading-snug text-slate-900 transition-colors duration-300 group-hover/title:text-[var(--accent-foreground)] sm:text-xl sm:leading-tight">
           {post.title}
         </h3>
 
