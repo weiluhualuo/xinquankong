@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { AnnouncementStrip } from "../components/announcement-strip";
+import { MobilePostsTabs } from "../components/mobile-posts-tabs";
 import { PostCard } from "../components/post-card";
 import { ApiError, getAnnouncements, getBoards, getHomepageContent, getPosts, getTags } from "../lib/api";
 
@@ -33,18 +34,75 @@ export default async function HomePage() {
               <Link href="/boards" className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-center text-sm font-semibold">浏览板块</Link>
             </div>
           </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3 md:mt-16 md:gap-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"><div className="text-3xl font-bold">{boards.length}</div><div className="mt-2 font-semibold">板块</div><div className="mt-1 text-sm text-slate-500">先把讨论结构控制清楚。</div></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"><div className="text-3xl font-bold">{latest.total}</div><div className="mt-2 font-semibold">帖子</div><div className="mt-1 text-sm text-slate-500">最新公开讨论内容。</div></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"><div className="text-3xl font-bold">{tags.length}</div><div className="mt-2 font-semibold">标签</div><div className="mt-1 text-sm text-slate-500">辅助检索，不替代板块。</div></div>
+        </section>
+
+        {/* Mobile: boards horizontal scroll */}
+        <section className="border-t border-slate-200 bg-white lg:hidden">
+          <div className="px-4 py-5">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Boards</div>
+            <h2 className="mt-2 text-lg font-black tracking-tight">精选板块</h2>
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-4 pb-5" style={{ WebkitOverflowScrolling: "touch" }}>
+            {boards.map((board) => (
+              <Link
+                key={board.id}
+                href={`/board/${board.slug}`}
+                className="flex w-40 shrink-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: board.color }} />
+                  <span className="truncate text-sm font-bold text-slate-900">{board.name}</span>
+                </div>
+                <p className="mt-2 line-clamp-2 flex-1 text-xs leading-5 text-slate-500">{board.description}</p>
+                <div className="mt-3 text-xs font-semibold text-slate-400">{board.postCount} 帖子</div>
+              </Link>
+            ))}
           </div>
         </section>
 
-        <section className="border-t border-slate-200 bg-white">
+        {/* Mobile: posts with tab switching */}
+        <section className="border-t border-slate-200 bg-white lg:hidden">
+          <div className="px-4 pt-5">
+            <MobilePostsTabs
+              latestContent={
+                <div className="divide-y divide-slate-200 px-4">
+                  {latest.items.map((post) => <PostCard key={`m-l-${post.id}`} post={post} />)}
+                </div>
+              }
+              hotContent={
+                <div className="space-y-3 px-4">
+                  {hot.items.slice(0, 5).map((post, index) => (
+                    <Link key={`m-h-${post.id}`} href={`/post/${post.id}`} className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300">
+                      <div className={`text-xs font-semibold ${index < 3 ? "text-[var(--accent-foreground)]" : "text-slate-400"}`}>#{index + 1}</div>
+                      <div className="mt-2 text-sm font-bold text-slate-900">{post.title}</div>
+                      <div className="mt-2 text-xs text-slate-500">{post.metrics.likes} 赞 / {post.metrics.comments} 评论</div>
+                    </Link>
+                  ))}
+                </div>
+              }
+            />
+          </div>
+          <div className="px-4 pb-5">
+            <div className="mt-6 border-t border-slate-200 pt-5">
+              <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Topics</div>
+              <h3 className="text-base font-bold">热门标签</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <span key={tag.id} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
+                    #{tag.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Desktop: 3-column layout */}
+        <section className="hidden border-t border-slate-200 bg-white lg:block">
           <div className="mx-auto max-w-6xl px-0 py-0">
             <div className="bg-gradient-to-br from-white via-slate-50 to-[var(--accent)]">
-              <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_300px]">
-                  <section className="rounded-none border-b border-slate-200 bg-white p-0 shadow-none lg:border-b-0 lg:border-r">
+              <div className="grid grid-cols-[220px_1fr_300px]">
+                  <section className="rounded-none border-b border-slate-200 bg-white p-0 shadow-none border-b-0 border-r">
                     <div className="mb-5 flex items-end justify-between gap-3 px-5 pt-5">
                       <div>
                         <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Boards</div>
@@ -85,7 +143,7 @@ export default async function HomePage() {
                     </div>
                   </section>
 
-                  <section className="rounded-none border-b border-slate-200 bg-white shadow-none overflow-hidden min-w-0 lg:border-b-0 lg:border-r">
+                  <section className="rounded-none border-b border-slate-200 bg-white shadow-none overflow-hidden min-w-0 border-b-0 border-r">
                     <div className="border-b border-slate-200 px-6 py-5">
                       <div className="flex items-end justify-between gap-3">
                         <div>

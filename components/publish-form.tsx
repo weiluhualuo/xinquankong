@@ -80,10 +80,64 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6 pb-20 md:space-y-8 md:pb-0">
       {error && <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700">{error}</div>}
 
-      <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+      {/* Mobile: board horizontal scroll */}
+      <section className="lg:hidden">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-sm font-bold text-slate-900">选择板块</div>
+          {selectedBoardMeta && (
+            <span className="text-xs font-semibold text-slate-500">{selectedBoardMeta.name}</span>
+          )}
+        </div>
+        <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
+          {boardOptions.map((board) => {
+            const active = selectedBoard === board.slug;
+            return (
+              <button
+                key={board.id}
+                type="button"
+                onClick={() => setSelectedBoard(board.slug)}
+                className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+                  active
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-700"
+                }`}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: board.color }} />
+                {board.name}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Mobile: compact type selector */}
+      <section className="space-y-2 lg:hidden">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-bold text-slate-900">帖子类型</div>
+          <span className="text-xs font-semibold text-slate-500">{selectedTypeMeta?.label ?? "未选择"}</span>
+        </div>
+        {activePostTypes.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">
+            当前没有可用的帖子类型，请联系管理员在后台先创建。
+          </div>
+        ) : (
+          <select
+            value={type}
+            onChange={(event) => setType(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]"
+          >
+            {activePostTypes.map((item) => (
+              <option key={item.id} value={item.value}>{item.label}</option>
+            ))}
+          </select>
+        )}
+      </section>
+
+      {/* Desktop: board + type side by side */}
+      <section className="hidden gap-6 lg:grid lg:grid-cols-[1.15fr_0.85fr]">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
@@ -200,9 +254,18 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
         <p className="mt-2 text-xs text-slate-500">最多选择 3 个标签。</p>
       </div>
 
-      <div className="flex items-center justify-end gap-4 border-t border-slate-100 pt-6">
+      {/* Desktop: inline buttons */}
+      <div className="hidden items-center justify-end gap-4 border-t border-slate-100 pt-6 md:flex">
         <button type="button" onClick={() => router.back()} className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900">取消</button>
         <button type="submit" disabled={isLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-900 bg-slate-900 px-8 font-medium text-white disabled:opacity-50">
+          {isLoading ? "发布中..." : "确认发布"}
+        </button>
+      </div>
+
+      {/* Mobile: sticky bottom bar */}
+      <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:hidden">
+        <button type="button" onClick={() => router.back()} className="px-5 py-2.5 text-sm font-medium text-slate-600">取消</button>
+        <button type="submit" disabled={isLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-7 text-sm font-semibold text-white disabled:opacity-50">
           {isLoading ? "发布中..." : "确认发布"}
         </button>
       </div>
