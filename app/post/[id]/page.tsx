@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiError, getPost } from "../../../lib/api";
 import { ImageViewer } from "../../../components/image-viewer";
+import { PostEditButton } from "../../../components/post-edit-button";
 import { PostInteractions } from "../../../components/post-interactions";
 import { RichContent } from "../../../components/rich-content";
 
@@ -60,14 +61,22 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
     }
 
     return (
-      <div className="min-h-[calc(100vh-3.5rem)] bg-[#f8fafc] py-10 md:py-16">
+      <div className="min-h-[calc(100vh-3.5rem)] bg-gradient-to-br from-white via-cyan-50/20 to-sky-50/10 pb-20 pt-10 lg:pb-0 md:pt-16">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 lg:flex-row">
-          <article className="min-w-0 flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <article className="animate-fade-in min-w-0 flex-1 overflow-hidden rounded-3xl border border-cyan-100 bg-white/80 shadow-glass backdrop-blur-sm">
             <div className="p-8 md:p-12">
+              <nav className="mb-6 flex items-center justify-between text-sm text-slate-500">
+                <div>
+                  <Link href={`/board/${post.board.slug}`} className="font-semibold hover:text-cyan-700" style={{ color: post.board.color }}>{post.board.name}</Link>
+                  <span className="mx-2">/</span>
+                  <span className="text-slate-700">{post.title}</span>
+                </div>
+                <PostEditButton authorId={post.author.id} postId={post.id} />
+              </nav>
+
               <div className="mb-6 flex items-center gap-3">
                 <span
-                  className="rounded-full border px-3 py-1 text-xs font-bold"
-                  style={{ borderColor: post.board.color, color: post.board.color, backgroundColor: `${post.board.color}15` }}
+                  className="rounded-full border border-cyan-200 bg-gradient-to-r from-cyan-50 to-sky-50 px-3 py-1 text-xs font-bold text-cyan-700"
                 >
                   {post.board.name}
                 </span>
@@ -76,18 +85,32 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
 
               <h1 className="mb-6 text-3xl font-extrabold leading-tight text-slate-900 md:text-4xl">{post.title}</h1>
 
-              <div className="mb-10 flex items-center gap-3 border-b border-slate-100 pb-8">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-bold text-slate-600">
-                  {post.author.displayName.charAt(0)}
-                </div>
+              <div className="mb-10 flex items-center gap-3 border-b border-cyan-100 pb-8">
+                {post.author.avatarUrl ? (
+                  <img src={post.author.avatarUrl} alt={post.author.displayName} className="h-10 w-10 rounded-full object-cover ring-2 ring-cyan-200" />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-100 to-sky-100 font-bold text-cyan-600">
+                    {post.author.displayName.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <div className="font-semibold text-slate-900">{post.author.displayName}</div>
                   <div className="text-xs text-slate-500">{post.metrics.views} 次浏览</div>
                 </div>
               </div>
 
+              {post.tags.length > 0 && (
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {post.tags.map((tag) => (
+                    <Link key={tag.id} href={`/tag/${tag.slug}`} className="rounded-full border border-cyan-200 bg-gradient-to-r from-cyan-50 to-sky-50 px-3 py-1 text-xs font-semibold text-cyan-600 hover:from-cyan-100 hover:to-sky-100">
+                      #{tag.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+
               {post.excerpt && (
-                <p className="mb-10 rounded-r-xl border-l-4 border-blue-500 bg-slate-50 py-4 pl-6 text-xl font-medium leading-relaxed text-slate-600">
+                <p className="mb-10 rounded-r-xl border-l-4 border-cyan-400 bg-gradient-to-r from-cyan-50 to-transparent py-4 pl-6 text-xl font-medium leading-relaxed text-slate-600">
                   {post.excerpt}
                 </p>
               )}

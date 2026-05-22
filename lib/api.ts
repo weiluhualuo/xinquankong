@@ -280,6 +280,11 @@ export async function updateForumPost(
     title: string;
     excerpt: string;
     content: string;
+    boardSlug: string;
+    type: string;
+    coverImageUrl: string;
+    tagSlugs: string[];
+    imageUrls: string[];
   }>
 ) {
   return patchJson<PostSummary>(`/posts/${postId}`, payload);
@@ -442,11 +447,11 @@ export async function createBoard(payload: { slug: string; name: string; descrip
   return postJson<AdminBoardRecord>("/admin/boards", payload);
 }
 
-export async function createAnnouncement(payload: { title: string; content: string; isActive?: boolean; sortOrder?: number }) {
+export async function createAnnouncement(payload: { title: string; content: string; isActive?: boolean; sortOrder?: number; imageUrl?: string }) {
   return postJson<AdminAnnouncementRecord>("/admin/announcements", payload);
 }
 
-export async function updateAnnouncement(announcementId: string, payload: Partial<{ title: string; content: string; isActive: boolean; sortOrder: number }>) {
+export async function updateAnnouncement(announcementId: string, payload: Partial<{ title: string; content: string; isActive: boolean; sortOrder: number; imageUrl: string }>) {
   return patchJson<AdminAnnouncementRecord>(`/admin/announcements/${announcementId}`, payload);
 }
 

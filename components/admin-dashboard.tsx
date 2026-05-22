@@ -41,7 +41,7 @@ export function AdminDashboard() {
   const [tagForm, setTagForm] = useState<TagFormState>({ id: "", slug: "", name: "" });
   const [inviteForm, setInviteForm] = useState<InviteFormState>({ id: "", code: "", note: "", maxUses: 1, isActive: true });
   const [batchForm, setBatchForm] = useState<BatchFormState>({ count: 5, note: "", maxUses: 1, isActive: true });
-  const [announcementForm, setAnnouncementForm] = useState<AnnouncementFormState>({ id: "", title: "", content: "", isActive: true, sortOrder: 0 });
+  const [announcementForm, setAnnouncementForm] = useState<AnnouncementFormState>({ id: "", title: "", content: "", imageUrl: "", isActive: true, sortOrder: 0 });
   const [homepageForm, setHomepageForm] = useState<HomepageContentFormState>({ heroBadge: "", heroTitle: "", heroDescription: "" });
   const [postTypeForm, setPostTypeForm] = useState<PostTypeFormState>({ id: "", value: "", label: "", description: "", sortOrder: 0, isActive: true });
 
@@ -51,7 +51,7 @@ export function AdminDashboard() {
     setBoardForm({ id: "", slug: "", name: "", description: "", color: "#9FC4EA" });
     setTagForm({ id: "", slug: "", name: "" });
     setInviteForm({ id: "", code: "", note: "", maxUses: 1, isActive: true });
-    setAnnouncementForm({ id: "", title: "", content: "", isActive: true, sortOrder: 0 });
+    setAnnouncementForm({ id: "", title: "", content: "", imageUrl: "", isActive: true, sortOrder: 0 });
     setPostTypeForm({ id: "", value: "", label: "", description: "", sortOrder: 0, isActive: true });
     if (data) {
       setHomepageForm({

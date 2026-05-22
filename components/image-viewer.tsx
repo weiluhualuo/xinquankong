@@ -1,18 +1,20 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface ImageViewerProps {
-  images: { id: string; imageUrl: string }[];
+  images: { id: string; imageUrl: string; sortOrder?: number }[];
 }
 
 export function ImageViewer({ images }: ImageViewerProps) {
+  const sorted = useMemo(() => [...images].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)), [images]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const close = useCallback(() => setActiveIndex(null), []);
-  const prev = useCallback(() => setActiveIndex((i) => (i !== null ? (i - 1 + images.length) % images.length : i)), [images.length]);
-  const next = useCallback(() => setActiveIndex((i) => (i !== null ? (i + 1) % images.length : i)), [images.length]);
+  const prev = useCallback(() => setActiveIndex((i) => (i !== null ? (i - 1 + sorted.length) % sorted.length : i)), [sorted.length]);
+  const next = useCallback(() => setActiveIndex((i) => (i !== null ? (i + 1) % sorted.length : i)), [sorted.length]);
 
   useEffect(() => {
     if (activeIndex === null) return;
@@ -29,17 +31,17 @@ export function ImageViewer({ images }: ImageViewerProps) {
     };
   }, [activeIndex, close, prev, next]);
 
-  if (images.length === 0) return null;
+  if (sorted.length === 0) return null;
 
   return (
     <>
       <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {images.map((image, index) => (
+        {sorted.map((image, index) => (
           <button
             key={image.id}
             type="button"
             onClick={() => setActiveIndex(index)}
-            className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100 cursor-zoom-in"
+            className="group hover-lift relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100 cursor-zoom-in"
           >
             <Image
               src={image.imageUrl}
@@ -54,8 +56,23 @@ export function ImageViewer({ images }: ImageViewerProps) {
 
       {activeIndex !== null && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm animate-fade-in"
           onClick={close}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+          }}
+          onTouchEnd={(e) => {
+            if (!touchStartRef.current) return;
+            const touch = e.changedTouches[0];
+            const dx = touch.clientX - touchStartRef.current.x;
+            const dy = touch.clientY - touchStartRef.current.y;
+            touchStartRef.current = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+              if (dx < 0) next();
+              else prev();
+            }
+          }}
         >
           <button
             type="button"
@@ -66,7 +83,7 @@ export function ImageViewer({ images }: ImageViewerProps) {
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           </button>
 
-          {images.length > 1 && (
+          {sorted.length > 1 && (
             <>
               <button
                 type="button"
@@ -87,9 +104,9 @@ export function ImageViewer({ images }: ImageViewerProps) {
             </>
           )}
 
-          <div className="relative max-h-[85vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-h-[85vh] max-w-[90vw] animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <Image
-              src={images[activeIndex].imageUrl}
+              src={sorted[activeIndex].imageUrl}
               alt="查看大图"
               width={1600}
               height={1200}
@@ -98,9 +115,9 @@ export function ImageViewer({ images }: ImageViewerProps) {
             />
           </div>
 
-          {images.length > 1 && (
+          {sorted.length > 1 && (
             <div className="absolute bottom-5 flex gap-2">
-              {images.map((_, i) => (
+              {sorted.map((_, i) => (
                 <button
                   key={i}
                   type="button"

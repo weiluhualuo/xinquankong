@@ -360,6 +360,7 @@ export interface AnnouncementRecord {
   id: string;
   title: string;
   content: string;
+  imageUrl?: string;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;

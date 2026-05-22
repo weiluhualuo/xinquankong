@@ -2,29 +2,47 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ApiError, createForumPost, getUploadUrl } from "../lib/api";
+import { ApiError, createForumPost, getUploadUrl, updateForumPost } from "../lib/api";
 import type { BoardSummary, PostTypeOptionRecord, TagSummary } from "../lib/types";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error) return error.message;
-  return "发帖失败，请稍后再试。";
+  return "操作失败，请稍后再试。";
 }
 
-export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[]; tags: TagSummary[]; postTypes: PostTypeOptionRecord[] }) {
+export interface PublishFormInitialValues {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  boardSlug: string;
+  type: string;
+  tagSlugs: string[];
+  imageUrls: string[];
+}
+
+export function PublishForm({ boards, tags, postTypes, initialValues, submitLabel, submittingLabel }: {
+  boards: BoardSummary[];
+  tags: TagSummary[];
+  postTypes: PostTypeOptionRecord[];
+  initialValues?: PublishFormInitialValues;
+  submitLabel?: string;
+  submittingLabel?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const presetBoard = searchParams.get("board") ?? boards[0]?.slug ?? "general";
+  const presetBoard = initialValues?.boardSlug ?? searchParams.get("board") ?? boards[0]?.slug ?? "general";
   const activePostTypes = useMemo(() => postTypes.filter((item) => item.isActive), [postTypes]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedBoard, setSelectedBoard] = useState(presetBoard);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [type, setType] = useState(activePostTypes[0]?.value ?? "");
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialValues?.tagSlugs ?? []);
+  const [type, setType] = useState(initialValues?.type ?? activePostTypes[0]?.value ?? "");
   const boardOptions = useMemo(() => boards, [boards]);
   const selectedBoardMeta = boardOptions.find((board) => board.slug === selectedBoard) ?? boardOptions[0];
   const selectedTypeMeta = activePostTypes.find((item) => item.value === type) ?? activePostTypes[0];
-  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>(initialValues?.imageUrls ?? []);
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, number>>(new Map());
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,19 +146,33 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
         throw new Error("至少选择一个标签");
       }
 
-      const created = await createForumPost({
-        title,
-        excerpt,
-        content,
-        boardSlug: selectedBoard,
-        type,
-        ...(coverImageUrl ? { coverImageUrl } : {}),
-        tagSlugs: selectedTags,
-        ...(imageUrls.length ? { imageUrls } : {})
-      });
-
-      router.push(`/post/${created.id}`);
-      router.refresh();
+      if (initialValues) {
+        await updateForumPost(initialValues.id, {
+          title,
+          excerpt,
+          content,
+          boardSlug: selectedBoard,
+          type,
+          ...(coverImageUrl ? { coverImageUrl } : {}),
+          tagSlugs: selectedTags,
+          ...(imageUrls.length ? { imageUrls } : {})
+        });
+        router.push(`/post/${initialValues.id}`);
+        router.refresh();
+      } else {
+        const created = await createForumPost({
+          title,
+          excerpt,
+          content,
+          boardSlug: selectedBoard,
+          type,
+          ...(coverImageUrl ? { coverImageUrl } : {}),
+          tagSlugs: selectedTags,
+          ...(imageUrls.length ? { imageUrls } : {})
+        });
+        router.push(`/post/${created.id}`);
+        router.refresh();
+      }
     } catch (submitError) {
       setError(getErrorMessage(submitError));
     } finally {
@@ -150,7 +182,7 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pb-20 md:space-y-8 md:pb-0">
-      {error && <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700">{error}</div>}
+      {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">{error}</div>}
 
       {/* Mobile: board horizontal scroll */}
       <section className="lg:hidden">
@@ -168,10 +200,10 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
                 key={board.id}
                 type="button"
                 onClick={() => setSelectedBoard(board.slug)}
-                className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+                className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all ${
                   active
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-200 bg-white text-slate-700"
+                    ? "border-cyan-400 bg-gradient-to-r from-cyan-500 to-sky-500 text-white shadow-md shadow-cyan-500/20 scale-105"
+                    : "border-cyan-200 bg-white text-slate-700 hover:bg-cyan-50 hover:scale-105"
                 }`}
               >
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: board.color }} />
@@ -227,17 +259,17 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
                   key={board.id}
                   type="button"
                   onClick={() => setSelectedBoard(board.slug)}
-                  className={`rounded-2xl border px-4 py-4 text-left transition ${
+                  className={`hover-lift rounded-2xl border px-4 py-4 text-left transition-all ${
                     active
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-[var(--accent)]"
+                      ? "border-cyan-400 bg-gradient-to-br from-cyan-500 to-sky-500 text-white shadow-lg shadow-cyan-500/20 scale-[1.02]"
+                      : "border-cyan-100 bg-white/80 text-slate-700 hover:bg-cyan-50 hover:border-cyan-200"
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: board.color }} />
                     <span className="text-sm font-bold">{board.name}</span>
                   </div>
-                  <div className={`mt-2 text-xs leading-5 ${active ? "text-slate-200" : "text-slate-500"}`}>
+                  <div className={`mt-2 text-xs leading-5 ${active ? "text-cyan-100" : "text-slate-500"}`}>
                     {board.description}
                   </div>
                 </button>
@@ -246,7 +278,7 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+        <div className="rounded-3xl border border-cyan-100 bg-gradient-to-br from-cyan-50/50 to-sky-50/30 p-6 shadow-sm">
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
               <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Type</div>
@@ -286,17 +318,17 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
       <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="md:col-span-2">
           <label className="mb-2 block text-sm font-bold text-slate-900">标题 *</label>
-          <input type="text" name="title" required minLength={6} maxLength={120} placeholder="用一句话概括你的核心观点" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
+          <input type="text" name="title" required minLength={6} maxLength={120} defaultValue={initialValues?.title} placeholder="用一句话概括你的核心观点" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
         </div>
         <div className="md:col-span-2">
           <label className="mb-2 block text-sm font-bold text-slate-900">摘要 *</label>
-          <textarea name="excerpt" required minLength={10} rows={2} placeholder="补充必要背景，让列表页也能看懂" className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
+          <textarea name="excerpt" required minLength={10} rows={2} defaultValue={initialValues?.excerpt} placeholder="补充必要背景，让列表页也能看懂" className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
         </div>
         <div>
           <label className="mb-2 block text-sm font-bold text-slate-900">配图</label>
 
           <div
-            className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center cursor-pointer hover:border-[var(--primary-strong)] transition-colors"
+            className="rounded-2xl border-2 border-dashed border-cyan-300 bg-cyan-50/30 p-6 text-center cursor-pointer hover:border-cyan-400 hover:bg-cyan-50/60 transition-colors"
             onClick={() => fileInputRef.current?.click()}
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={(e) => { e.preventDefault(); handleFileUpload(e.dataTransfer.files); }}
@@ -358,7 +390,7 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
 
       <div>
         <label className="mb-2 block text-sm font-bold text-slate-900">正文 *</label>
-        <textarea name="content" required minLength={20} rows={12} placeholder="把完整内容写在这里..." className="w-full min-h-[220px] resize-y rounded-2xl border border-slate-200 bg-white p-4 focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
+        <textarea name="content" required minLength={20} rows={12} defaultValue={initialValues?.content} placeholder="把完整内容写在这里..." className="w-full min-h-[220px] resize-y rounded-2xl border border-slate-200 bg-white p-4 focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
         <p className="mt-2 text-xs text-slate-500">支持纯文本和 Markdown。</p>
       </div>
 
@@ -368,7 +400,7 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
           {tags.map((tag) => {
             const active = selectedTags.includes(tag.slug);
             return (
-              <button key={tag.id} type="button" onClick={() => toggleTag(tag.slug)} className={`rounded-full border px-4 py-2 text-sm font-medium ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-[var(--accent)]"}`}>
+              <button key={tag.id} type="button" onClick={() => toggleTag(tag.slug)} className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${active ? "border-cyan-400 bg-gradient-to-r from-cyan-500 to-sky-500 text-white shadow-md shadow-cyan-500/20 scale-105" : "border-cyan-200 bg-white text-slate-700 hover:bg-cyan-50 hover:scale-105"}`}>
                 #{tag.name}
               </button>
             );
@@ -380,16 +412,16 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
       {/* Desktop: inline buttons */}
       <div className="hidden items-center justify-end gap-4 border-t border-slate-100 pt-6 md:flex">
         <button type="button" onClick={() => router.back()} className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900">取消</button>
-        <button type="submit" disabled={isLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-900 bg-slate-900 px-8 font-medium text-white disabled:opacity-50">
-          {isLoading ? "发布中..." : "确认发布"}
+        <button type="submit" disabled={isLoading} className="hover-lift inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 px-8 font-medium text-white shadow-lg shadow-cyan-500/25 transition hover:shadow-xl hover:shadow-cyan-500/30 disabled:opacity-50">
+          {isLoading ? (submittingLabel ?? "发布中...") : (submitLabel ?? "确认发布")}
         </button>
       </div>
 
       {/* Mobile: sticky bottom bar */}
-      <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between border-t border-white/30 glass-strong px-4 py-3 md:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
         <button type="button" onClick={() => router.back()} className="px-5 py-2.5 text-sm font-medium text-slate-600">取消</button>
-        <button type="submit" disabled={isLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-7 text-sm font-semibold text-white disabled:opacity-50">
-          {isLoading ? "发布中..." : "确认发布"}
+        <button type="submit" disabled={isLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 px-7 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 disabled:opacity-50">
+          {isLoading ? (submittingLabel ?? "发布中...") : (submitLabel ?? "确认发布")}
         </button>
       </div>
     </form>

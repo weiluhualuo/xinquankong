@@ -21,14 +21,15 @@ export function CommentThread({ comments, canReply = false, busyCommentId = "", 
 
   return (
     <div className="space-y-8">
-      {comments.map((comment) => (
-        <CommentItem
-          key={comment.id}
-          comment={comment}
-          canReply={canReply}
-          busyCommentId={busyCommentId}
-          onReply={onReply}
-        />
+      {comments.map((comment, index) => (
+        <div key={comment.id} className="animate-slide-in-up opacity-0" style={{ animationDelay: `${index * 80}ms` }}>
+          <CommentItem
+            comment={comment}
+            canReply={canReply}
+            busyCommentId={busyCommentId}
+            onReply={onReply}
+          />
+        </div>
       ))}
     </div>
   );
@@ -106,7 +107,7 @@ function CommentItem({ comment, isReply = false, canReply, busyCommentId, onRepl
           )}
 
           {replyOpen && !replyDisabled && (
-            <form onSubmit={handleReplySubmit} className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <form onSubmit={handleReplySubmit} className="mt-4 animate-slide-in-up space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <textarea
                 value={replyContent}
                 onChange={(event) => setReplyContent(event.target.value)}

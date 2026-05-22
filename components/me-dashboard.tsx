@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ApiError, createMyInviteCode, deleteForumPost, getMe, getMyActivity, getMyPosts, updateForumPost, updateMeProfile } from "../lib/api";
+import { ApiError, createMyInviteCode, deleteForumPost, getMe, getMyActivity, getMyPosts, updateMeProfile } from "../lib/api";
 import type { MyActivity, PostSummary, UserInviteCode, UserProfile } from "../lib/types";
 import { PostCard } from "./post-card";
 
@@ -41,7 +41,6 @@ export function MeDashboard() {
   const [saving, setSaving] = useState(false);
   const [postBusy, setPostBusy] = useState("");
   const [editing, setEditing] = useState(false);
-  const [editingPostId, setEditingPostId] = useState("");
   const [activePanel, setActivePanel] = useState<"posts" | "activity">("posts");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -50,7 +49,6 @@ export function MeDashboard() {
   const [inviteError, setInviteError] = useState("");
   const [copiedInviteCode, setCopiedInviteCode] = useState("");
   const [form, setForm] = useState({ displayName: "", bio: "", avatarUrl: "", joinedLabel: "" });
-  const [postForm, setPostForm] = useState({ title: "", excerpt: "", content: "" });
 
   useEffect(() => {
     const loadData = async () => {
@@ -78,23 +76,6 @@ export function MeDashboard() {
 
     void loadData();
   }, []);
-
-  const startEditPost = (post: PostSummary) => {
-    setEditingPostId(post.id);
-    setPostForm({
-      title: post.title,
-      excerpt: post.excerpt ?? "",
-      content: post.content
-    });
-    setActivePanel("posts");
-    setError("");
-    setSuccess("");
-  };
-
-  const cancelEditPost = () => {
-    setEditingPostId("");
-    setPostForm({ title: "", excerpt: "", content: "" });
-  };
 
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -124,31 +105,6 @@ export function MeDashboard() {
     }
   };
 
-  const handleSavePost = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!editingPostId) {
-      return;
-    }
-
-    setPostBusy(`save-${editingPostId}`);
-    setError("");
-    setSuccess("");
-    try {
-      const updated = await updateForumPost(editingPostId, {
-        title: postForm.title.trim(),
-        excerpt: postForm.excerpt.trim(),
-        content: postForm.content.trim()
-      });
-      setMyPosts((current) => current.map((post) => (post.id === editingPostId ? { ...post, ...updated } : post)));
-      setSuccess("帖子已更新。");
-      cancelEditPost();
-    } catch (saveError) {
-      setError(getErrorMessage(saveError));
-    } finally {
-      setPostBusy("");
-    }
-  };
-
   const handleDeletePost = async (postId: string) => {
     const confirmed = window.confirm("确认删除这篇帖子吗？删除后会从公开列表中移除。");
     if (!confirmed) {
@@ -161,9 +117,6 @@ export function MeDashboard() {
     try {
       await deleteForumPost(postId);
       setMyPosts((current) => current.filter((post) => post.id !== postId));
-      if (editingPostId === postId) {
-        cancelEditPost();
-      }
       setSuccess("帖子已删除。");
     } catch (deleteError) {
       setError(getErrorMessage(deleteError));
@@ -248,14 +201,14 @@ export function MeDashboard() {
                   <button
                     type="button"
                     onClick={() => setActivePanel("posts")}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold ${activePanel === "posts" ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${activePanel === "posts" ? "bg-slate-900 text-white shadow-md" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:shadow-sm"}`}
                   >
                     我的帖子
                   </button>
                   <button
                     type="button"
                     onClick={() => setActivePanel("activity")}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold ${activePanel === "activity" ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${activePanel === "activity" ? "bg-slate-900 text-white shadow-md" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:shadow-sm"}`}
                   >
                     最近动态
                   </button>
@@ -295,13 +248,12 @@ export function MeDashboard() {
                                 {post.excerpt && <p className="mt-2 text-sm leading-6 text-slate-600">{post.excerpt}</p>}
                               </div>
                               <div className="flex flex-wrap gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => startEditPost(post)}
+                                <Link
+                                  href={`/post/${post.id}/edit`}
                                   className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-slate-50"
                                 >
                                   编辑
-                                </button>
+                                </Link>
                                 <button
                                   type="button"
                                   onClick={() => void handleDeletePost(post.id)}
@@ -312,60 +264,6 @@ export function MeDashboard() {
                                 </button>
                               </div>
                             </div>
-
-                            {editingPostId === post.id && (
-                              <form onSubmit={handleSavePost} className="mt-6 grid gap-4 border-t border-slate-100 pt-6">
-                                <div>
-                                  <label className="mb-2 block text-sm font-semibold text-slate-700">帖子标题</label>
-                                  <input
-                                    value={postForm.title}
-                                    onChange={(event) => setPostForm((current) => ({ ...current, title: event.target.value }))}
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-black focus:bg-white"
-                                    minLength={6}
-                                    maxLength={120}
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <label className="mb-2 block text-sm font-semibold text-slate-700">帖子摘要</label>
-                                  <textarea
-                                    value={postForm.excerpt}
-                                    onChange={(event) => setPostForm((current) => ({ ...current, excerpt: event.target.value }))}
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-black focus:bg-white"
-                                    minLength={10}
-                                    rows={2}
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <label className="mb-2 block text-sm font-semibold text-slate-700">帖子正文</label>
-                                  <textarea
-                                    value={postForm.content}
-                                    onChange={(event) => setPostForm((current) => ({ ...current, content: event.target.value }))}
-                                    className="min-h-[180px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-black focus:bg-white"
-                                    minLength={20}
-                                    rows={8}
-                                    required
-                                  />
-                                </div>
-                                <div className="flex justify-end gap-3">
-                                  <button
-                                    type="button"
-                                    onClick={cancelEditPost}
-                                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-slate-50"
-                                  >
-                                    取消
-                                  </button>
-                                  <button
-                                    type="submit"
-                                    disabled={postBusy === `save-${post.id}`}
-                                    className="rounded-lg border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-                                  >
-                                    {postBusy === `save-${post.id}` ? "保存中..." : "保存更改"}
-                                  </button>
-                                </div>
-                              </form>
-                            )}
                           </div>
                         ))}
                       </div>
@@ -383,7 +281,7 @@ export function MeDashboard() {
                       <div className="py-20 text-center">
                         <h3 className="mb-2 text-lg font-medium text-slate-900">暂无最近动态</h3>
                         <p className="mb-6 text-sm text-slate-500">你关注的板块最近还没有新的内容。</p>
-                        <Link href="/boards" className="text-sm font-medium text-[var(--accent-foreground)] hover:underline">
+                        <Link href="/boards" className="text-sm font-medium text-cyan-600 hover:underline">
                           去看看板块
                         </Link>
                       </div>
@@ -397,31 +295,35 @@ export function MeDashboard() {
           </div>
 
           <aside className="order-1 lg:order-2 lg:sticky lg:top-24">
-            <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <section className="rounded-3xl border border-cyan-100 bg-white/80 p-8 shadow-glass backdrop-blur-sm">
               <div className="flex flex-col gap-6">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-slate-100 text-3xl font-bold text-slate-400 shadow-md">
-                  {me.profile.displayName.charAt(0)}
-                </div>
+                {me.profile.avatarUrl ? (
+                  <img src={me.profile.avatarUrl} alt={me.profile.displayName} className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-glow-sm animate-float-gentle" />
+                ) : (
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-cyan-100 to-sky-100 text-3xl font-bold text-cyan-400 shadow-glow-sm animate-float-gentle">
+                    {me.profile.displayName.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <div className="flex flex-col gap-3">
                     <h1 className="text-2xl font-bold text-slate-900">{me.profile.displayName}</h1>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600">@{me.username}</span>
+                      <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-0.5 text-xs font-bold text-cyan-600">@{me.username}</span>
                       <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${getRoleTone(me.role)}`}>{getRoleLabel(me.role)}</span>
-                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">Lv.{me.level}</span>
+                      <span className="rounded-full border border-cyan-200 bg-gradient-to-r from-cyan-500 to-sky-500 px-2.5 py-0.5 text-xs font-bold text-white">Lv.{me.level}</span>
                       {me.profile.joinedLabel && (
-                        <span className="rounded-full border border-slate-200 bg-[var(--accent)] px-2.5 py-0.5 text-xs font-bold text-[var(--accent-foreground)]">{me.profile.joinedLabel}</span>
+                        <span className="rounded-full border border-cyan-200 bg-gradient-to-r from-cyan-50 to-sky-50 px-2.5 py-0.5 text-xs font-bold text-cyan-700">{me.profile.joinedLabel}</span>
                       )}
                     </div>
                   </div>
                   <p className="mt-5 leading-relaxed text-slate-600">{me.profile.bio || "还没有填写简介。"}</p>
-                  <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="mt-5 rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 to-sky-50 p-4">
                     <div className="flex items-center justify-between gap-3 text-sm">
                       <span className="font-semibold text-slate-700">成长进度</span>
-                      <span className="text-slate-500">{me.experience} / {me.progression.nextLevelExperience} EXP</span>
+                      <span className="text-cyan-500">{me.experience} / {me.progression.nextLevelExperience} EXP</span>
                     </div>
-                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200">
-                      <div className="h-full rounded-full bg-slate-900 transition-all" style={{ width: `${getProgressPercent(me)}%` }} />
+                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-cyan-100">
+                      <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-500 animate-progress-fill" style={{ width: `${getProgressPercent(me)}%` }} />
                     </div>
                     <div className="mt-3 flex items-center justify-between text-xs text-slate-500 gap-3">
                       <span>当前等级 Lv.{me.progression.level}</span>
@@ -441,14 +343,14 @@ export function MeDashboard() {
                     setSuccess("");
                     setError("");
                   }}
-                  className="rounded-lg border border-slate-200 bg-white px-6 py-2 text-sm font-medium shadow-sm hover:bg-slate-50"
+                  className="hover-lift rounded-lg bg-gradient-to-r from-cyan-500 to-sky-500 px-6 py-2 text-sm font-medium text-white shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30"
                 >
                   {editing ? "取消编辑" : "编辑资料"}
                 </button>
               </div>
 
-              <div className="mt-8 grid gap-4 border-t border-slate-100 pt-6">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mt-8 grid gap-4 border-t border-cyan-100 pt-6">
+                <div className="rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 to-sky-50 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h2 className="text-sm font-semibold text-slate-900">邀请中心</h2>
@@ -460,21 +362,21 @@ export function MeDashboard() {
                       type="button"
                       onClick={() => void handleGenerateInviteCode()}
                       disabled={!me.canGenerateInviteCode || inviteBusy}
-                      className="rounded-lg border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      className="hover-lift rounded-lg bg-gradient-to-r from-cyan-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {inviteBusy ? "生成中..." : "生成邀请码"}
                     </button>
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-slate-200 bg-white p-4">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">邀请人</div>
+                    <div className="rounded-xl border border-cyan-100 bg-white/80 p-4">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-cyan-400">邀请人</div>
                       <div className="mt-2 text-sm font-medium text-slate-900">
                         {me.invitedBy ? `${me.invitedBy.displayName} (@${me.invitedBy.username})` : "暂无邀请人信息"}
                       </div>
                     </div>
-                    <div className="rounded-xl border border-slate-200 bg-white p-4">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">已邀请用户</div>
+                    <div className="rounded-xl border border-cyan-100 bg-white/80 p-4">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-cyan-400">已邀请用户</div>
                       <div className="mt-2 text-sm font-medium text-slate-900">{(me.invitedUsers ?? []).length} 人</div>
                     </div>
                   </div>
@@ -492,13 +394,13 @@ export function MeDashboard() {
                       <p className="mt-1 text-xs text-slate-500">默认每个邀请码可使用 1 次，复制后发送给被邀请人即可。</p>
                     </div>
                     {(me.inviteCodes ?? []).length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">你还没有生成邀请码。</div>
+                      <div className="rounded-xl border border-dashed border-cyan-200 bg-white px-4 py-6 text-sm text-slate-500">你还没有生成邀请码。</div>
                     ) : (
                       <div className="space-y-3">
                         {(me.inviteCodes ?? []).map((inviteCode) => (
-                          <div key={inviteCode.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div key={inviteCode.id} className="flex flex-col gap-3 rounded-xl border border-cyan-100 bg-white/80 p-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="min-w-0">
-                              <div className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-slate-900">{inviteCode.code}</div>
+                              <div className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">{inviteCode.code}</div>
                               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                                 <span>剩余 {inviteCode.remainingUses}/{inviteCode.maxUses}</span>
                                 <span>已兑换 {inviteCode.redemptionCount}</span>
@@ -509,7 +411,7 @@ export function MeDashboard() {
                             <button
                               type="button"
                               onClick={() => void handleCopyInviteCode(inviteCode)}
-                              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-slate-50"
+                              className="rounded-lg border border-cyan-200 bg-white px-4 py-2 text-sm font-medium text-cyan-600 shadow-sm hover:bg-cyan-50"
                             >
                               {copiedInviteCode === inviteCode.id ? "已复制" : "复制邀请码"}
                             </button>
@@ -520,8 +422,8 @@ export function MeDashboard() {
                   </div>
 
                   {(me.invitedUsers ?? []).length > 0 && (
-                    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
-                      <h3 className="text-sm font-semibold text-slate-900">我邀请的用户</h3>
+                    <div className="mt-4 rounded-xl border border-cyan-100 bg-white/80 p-4">
+                      <h3 className="text-sm font-semibold text-cyan-700">我邀请的用户</h3>
                       <div className="mt-3 space-y-2">
                         {(me.invitedUsers ?? []).map((user) => (
                           <div key={user.id} className="flex items-center justify-between gap-3 text-sm">

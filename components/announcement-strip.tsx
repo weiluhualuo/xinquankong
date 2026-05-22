@@ -9,6 +9,7 @@ export function AnnouncementStrip({ announcements }: { announcements: Announceme
 
   const primaryAnnouncement = announcements[0];
   const marqueeText = `【${primaryAnnouncement.title}】${primaryAnnouncement.content}`;
+  const bgImage = primaryAnnouncement.imageUrl;
 
   return (
     <div className="pointer-events-none relative mb-4 md:absolute md:mb-0 right-0 top-4 z-30 w-full max-w-3xl text-slate-700 md:w-[32rem] md:translate-x-6">
@@ -17,7 +18,16 @@ export function AnnouncementStrip({ announcements }: { announcements: Announceme
           公告
         </span>
       </div>
-      <div className="pointer-events-auto relative overflow-hidden rounded-full border border-white/75 bg-[rgba(255,255,255,0.88)] px-4 py-3 shadow-[0_22px_60px_-30px_rgba(15,23,42,0.45)] backdrop-blur-md">
+      <div
+        className="pointer-events-auto relative overflow-hidden rounded-full border border-white/75 px-4 py-3 shadow-[0_22px_60px_-30px_rgba(15,23,42,0.45)] backdrop-blur-md"
+        style={bgImage ? {
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.82), rgba(255,255,255,0.82)), url(${bgImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        } : {
+          background: "rgba(255,255,255,0.88)",
+        }}
+      >
         <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[var(--accent)] via-white/88 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[var(--accent)] via-white/88 to-transparent" />
         <div className="flex w-max animate-homepage-marquee gap-10 whitespace-nowrap pr-10 text-sm font-medium">

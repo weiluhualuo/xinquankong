@@ -3,11 +3,11 @@ import { PostSummary } from "../lib/types";
 
 export function PostCard({ post }: { post: PostSummary }) {
   return (
-    <div className="group -mx-4 rounded-xl border-b border-slate-100 px-4 py-5 transition-all duration-300 last:border-0 hover:bg-slate-50/80 sm:px-6">
+    <div className="group -mx-4 rounded-xl border-b border-cyan-100/60 px-4 py-5 transition-all duration-300 last:border-0 hover:bg-cyan-50/40 hover:translate-x-1 sm:px-6">
       <div className="mb-3 flex flex-wrap items-center gap-2 sm:gap-3">
         <Link
           href={`/board/${post.board.slug}`}
-          className="rounded-md border border-[var(--border)] bg-[var(--accent)] px-2.5 py-1 text-xs font-bold text-[var(--accent-foreground)] transition hover:border-[var(--primary)] hover:bg-[rgba(159,196,234,0.22)]"
+          className="rounded-md border border-cyan-200 bg-gradient-to-r from-cyan-50 to-sky-50 px-2.5 py-1 text-xs font-bold text-cyan-700 transition hover:border-cyan-300 hover:from-cyan-100 hover:to-sky-100"
         >
           {post.board.name}
         </Link>
@@ -22,7 +22,7 @@ export function PostCard({ post }: { post: PostSummary }) {
       </div>
 
       <Link href={`/post/${post.id}`} className="block group/title">
-        <h3 className="mb-2 text-lg font-bold leading-snug text-slate-900 transition-colors duration-300 group-hover/title:text-[var(--accent-foreground)] sm:text-xl sm:leading-tight">
+        <h3 className="mb-2 text-lg font-bold leading-snug text-slate-900 transition-colors duration-300 group-hover/title:text-cyan-700 sm:text-xl sm:leading-tight">
           {post.title}
         </h3>
 
@@ -39,7 +39,7 @@ export function PostCard({ post }: { post: PostSummary }) {
             <Link
               key={tag.id}
               href={`/tag/${tag.slug}`}
-              className="rounded px-2 py-0.5 text-xs text-slate-400 transition-colors duration-300 hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]"
+              className="rounded px-2 py-0.5 text-xs text-slate-400 transition-colors duration-300 hover:bg-cyan-50 hover:text-cyan-700"
             >
               #{tag.name}
             </Link>
@@ -47,13 +47,13 @@ export function PostCard({ post }: { post: PostSummary }) {
         </div>
 
         <div className="flex items-center gap-4 text-sm font-medium text-slate-400">
-          <div className="flex cursor-pointer items-center gap-1.5 transition-colors duration-300 group-hover:text-[var(--accent-foreground)]">
+          <div className="flex cursor-pointer items-center gap-1.5 transition-colors duration-300 group-hover:text-cyan-600">
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
             </svg>
             {post.metrics.likes}
           </div>
-          <div className="flex cursor-pointer items-center gap-1.5 transition-colors duration-300 group-hover:text-[var(--accent-foreground)]">
+          <div className="flex cursor-pointer items-center gap-1.5 transition-colors duration-300 group-hover:text-cyan-600">
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
             </svg>

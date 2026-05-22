@@ -82,6 +82,7 @@ export type AnnouncementFormState = {
   id: string;
   title: string;
   content: string;
+  imageUrl: string;
   isActive: boolean;
   sortOrder: number;
 };

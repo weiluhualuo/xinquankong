@@ -23,6 +23,8 @@ import type {
   StateSetter,
   TagFormState
 } from "./admin-types";
+import { useRef, useState } from "react";
+import { getUploadUrl } from "../../lib/api";
 import { areaClass, badgeClass, formatDate, inputClass } from "./admin-ui";
 import {
   banUser,
@@ -367,20 +369,96 @@ export function InviteCodesSection({ inviteCodes, inviteForm, setInviteForm, bat
 }
 
 export function AnnouncementsSection({ announcements, announcementForm, setAnnouncementForm, busyKey, runAction }: { announcements: AdminAnnouncementRecord[]; announcementForm: AnnouncementFormState; setAnnouncementForm: StateSetter<AnnouncementFormState>; busyKey: string; runAction: RunAdminAction; }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const handleImageUpload = async (file: File) => {
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
+    const parts = file.name.split('.');
+    const ext = parts.length > 1 ? '.' + parts.pop()?.toLowerCase() : '';
+    if (!allowedExts.includes(ext)) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+    try {
+      const { uploadUrl, publicUrl } = await getUploadUrl(file.name, file.type);
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Upload failed: ${xhr.status}`));
+        };
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.send(file);
+      });
+      setAnnouncementForm((x) => ({ ...x, imageUrl: publicUrl }));
+    } catch {
+      alert("图片上传失败，请重试");
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
   return (
     <section className="grid gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm xl:grid-cols-[0.9fr_1.1fr]">
-      <form onSubmit={(event) => { event.preventDefault(); const payload = { title: announcementForm.title.trim(), content: announcementForm.content.trim(), isActive: announcementForm.isActive, sortOrder: Number(announcementForm.sortOrder) || 0 }; void runAction(announcementForm.id ? `announcement-update-${announcementForm.id}` : "announcement-create", () => (announcementForm.id ? updateAnnouncement(announcementForm.id, payload) : createAnnouncement(payload))); }} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+      <form onSubmit={(event) => { event.preventDefault(); const payload = { title: announcementForm.title.trim(), content: announcementForm.content.trim(), isActive: announcementForm.isActive, sortOrder: Number(announcementForm.sortOrder) || 0, imageUrl: announcementForm.imageUrl.trim() || undefined }; void runAction(announcementForm.id ? `announcement-update-${announcementForm.id}` : "announcement-create", () => (announcementForm.id ? updateAnnouncement(announcementForm.id, payload) : createAnnouncement(payload))); }} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
         <h2 className="text-xl font-bold">{announcementForm.id ? "编辑公告" : "创建公告"}</h2>
         <div className="mt-4 space-y-4">
           <input value={announcementForm.title} onChange={(event) => setAnnouncementForm((x) => ({ ...x, title: event.target.value }))} placeholder="公告标题" className={inputClass()} required />
           <textarea value={announcementForm.content} onChange={(event) => setAnnouncementForm((x) => ({ ...x, content: event.target.value }))} placeholder="公告内容" rows={5} className={areaClass()} required />
+
+          {/* 背景图片上传 */}
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">背景图片（可选）</label>
+            <div
+              className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-4 text-center cursor-pointer hover:border-slate-400 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); }}
+              onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files[0]) handleImageUpload(e.dataTransfer.files[0]); }}
+            >
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp,image/avif" className="hidden" onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
+              {uploading ? (
+                <div>
+                  <p className="text-sm text-slate-500">上传中... {uploadProgress}%</p>
+                  <div className="mt-2 h-1.5 rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-cyan-500 transition-all" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                </div>
+              ) : announcementForm.imageUrl ? (
+                <div className="relative">
+                  <img src={announcementForm.imageUrl} alt="背景预览" className="mx-auto max-h-32 rounded-lg object-cover" />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setAnnouncementForm((x) => ({ ...x, imageUrl: "" })); }}
+                    className="absolute right-0 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900/70 text-xs text-white hover:bg-slate-900"
+                  >×</button>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">点击或拖拽上传背景图片</p>
+              )}
+            </div>
+            <input
+              value={announcementForm.imageUrl}
+              onChange={(event) => setAnnouncementForm((x) => ({ ...x, imageUrl: event.target.value }))}
+              placeholder="或手动输入图片 URL"
+              className={`${inputClass()} mt-2`}
+            />
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <input type="number" value={announcementForm.sortOrder} onChange={(event) => setAnnouncementForm((x) => ({ ...x, sortOrder: Number(event.target.value) || 0 }))} className={inputClass()} placeholder="排序值" />
             <label className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm"><input type="checkbox" checked={announcementForm.isActive} onChange={(event) => setAnnouncementForm((x) => ({ ...x, isActive: event.target.checked }))} />启用公告</label>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="submit" disabled={busyKey === "announcement-create" || busyKey === `announcement-update-${announcementForm.id}`} className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{announcementForm.id ? "保存修改" : "发布公告"}</button>
-            {announcementForm.id && <button type="button" onClick={() => setAnnouncementForm({ id: "", title: "", content: "", isActive: true, sortOrder: 0 })} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold">取消编辑</button>}
+            {announcementForm.id && <button type="button" onClick={() => setAnnouncementForm({ id: "", title: "", content: "", imageUrl: "", isActive: true, sortOrder: 0 })} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold">取消编辑</button>}
           </div>
         </div>
       </form>
@@ -388,15 +466,21 @@ export function AnnouncementsSection({ announcements, announcementForm, setAnnou
         {announcements.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">当前还没有公告，先创建第一条公告。</div>
         ) : announcements.map((announcement) => (
-          <div key={announcement.id} className="rounded-2xl border border-slate-200 p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
+          <div key={announcement.id} className="overflow-hidden rounded-2xl border border-slate-200">
+            {announcement.imageUrl && (
+              <div className="relative h-28 w-full overflow-hidden">
+                <img src={announcement.imageUrl} alt="" className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              </div>
+            )}
+            <div className="flex flex-col gap-4 p-5 lg:flex-row lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2"><div className="text-lg font-bold">{announcement.title}</div><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${badgeClass(announcement.isActive ? "ACTIVE" : "INACTIVE")}`}>{announcement.isActive ? "已启用" : "已停用"}</span></div>
                 <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{announcement.content}</div>
                 <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500"><span>排序 {announcement.sortOrder}</span><span>{formatDate(announcement.updatedAt)}</span></div>
               </div>
               <div className="flex flex-wrap gap-2 lg:justify-end">
-                <button type="button" onClick={() => setAnnouncementForm({ id: announcement.id, title: announcement.title, content: announcement.content, isActive: announcement.isActive, sortOrder: announcement.sortOrder })} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold">编辑</button>
+                <button type="button" onClick={() => setAnnouncementForm({ id: announcement.id, title: announcement.title, content: announcement.content, imageUrl: announcement.imageUrl ?? "", isActive: announcement.isActive, sortOrder: announcement.sortOrder })} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold">编辑</button>
                 <button type="button" disabled={busyKey === `announcement-delete-${announcement.id}`} onClick={() => void runAction(`announcement-delete-${announcement.id}`, () => deleteAnnouncement(announcement.id))} className="rounded-xl border border-slate-900 border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-40">删除</button>
               </div>
             </div>
