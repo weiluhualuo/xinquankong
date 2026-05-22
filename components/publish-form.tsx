@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ApiError, createForumPost } from "../lib/api";
+import { ApiError, createForumPost, getUploadUrl } from "../lib/api";
 import type { BoardSummary, PostTypeOptionRecord, TagSummary } from "../lib/types";
 
 function getErrorMessage(error: unknown) {
@@ -24,6 +24,73 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
   const boardOptions = useMemo(() => boards, [boards]);
   const selectedBoardMeta = boardOptions.find((board) => board.slug === selectedBoard) ?? boardOptions[0];
   const selectedTypeMeta = activePostTypes.find((item) => item.value === type) ?? activePostTypes[0];
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<Map<string, number>>(new Map());
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
+    const validFiles = fileArray.filter(f => {
+      const parts = f.name.split('.');
+      const ext = parts.length > 1 ? '.' + parts.pop()?.toLowerCase() : '';
+      return allowedExts.includes(ext);
+    });
+
+    if (validFiles.length === 0) return;
+
+    const remaining = 6 - uploadedImageUrls.length;
+    if (remaining <= 0) return;
+
+    const toUpload = validFiles.slice(0, remaining);
+
+    for (const file of toUpload) {
+      const key = file.name;
+      setUploadingFiles(prev => new Map(prev).set(key, 0));
+
+      try {
+        const { uploadUrl, publicUrl } = await getUploadUrl(file.name, file.type);
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', uploadUrl);
+          xhr.setRequestHeader('Content-Type', file.type);
+
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setUploadingFiles(prev => {
+                const next = new Map(prev);
+                next.set(key, Math.round((e.loaded / e.total) * 100));
+                return next;
+              });
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) resolve();
+            else reject(new Error(`Upload failed: ${xhr.status}`));
+          };
+          xhr.onerror = () => reject(new Error('Upload failed'));
+          xhr.send(file);
+        });
+
+        setUploadedImageUrls(prev => [...prev, publicUrl]);
+        setUploadingFiles(prev => {
+          const next = new Map(prev);
+          next.delete(key);
+          return next;
+        });
+      } catch (err) {
+        setUploadErrors(prev => [...prev, `${file.name}: ${err instanceof Error ? err.message : '上传失败'}`]);
+        setUploadingFiles(prev => {
+          const next = new Map(prev);
+          next.delete(key);
+          return next;
+        });
+      }
+    }
+  };
 
   const toggleTag = (slug: string) => {
     setSelectedTags((current) =>
@@ -44,12 +111,14 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
       const title = String(formData.get("title") ?? "").trim();
       const excerpt = String(formData.get("excerpt") ?? "").trim();
       const content = String(formData.get("content") ?? "").trim();
-      const coverImageUrl = String(formData.get("coverImageUrl") ?? "").trim();
-      const imageUrls = String(formData.get("imageUrls") ?? "")
-        .split(/\r?\n|,/) 
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .slice(0, 6);
+      const imageUrls = [
+        ...uploadedImageUrls,
+        ...String(formData.get("imageUrls") ?? "")
+          .split(/\r?\n|,/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      ].slice(0, 6);
+      const coverImageUrl = imageUrls[0] || "";
 
       if (!type) {
         throw new Error("当前没有可用的帖子类型，请联系管理员先创建帖子类型");
@@ -224,12 +293,66 @@ export function PublishForm({ boards, tags, postTypes }: { boards: BoardSummary[
           <textarea name="excerpt" required minLength={10} rows={2} placeholder="补充必要背景，让列表页也能看懂" className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-bold text-slate-900">封面图 URL</label>
-          <input type="url" name="coverImageUrl" placeholder="https://example.com/cover.jpg" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-bold text-slate-900">配图 URL</label>
-          <textarea name="imageUrls" rows={4} placeholder="每行一个 URL，或用逗号分隔，最多 6 张图。" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
+          <label className="mb-2 block text-sm font-bold text-slate-900">配图</label>
+
+          <div
+            className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center cursor-pointer hover:border-[var(--primary-strong)] transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); }}
+            onDrop={(e) => { e.preventDefault(); handleFileUpload(e.dataTransfer.files); }}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
+              multiple
+              className="hidden"
+              onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+            />
+            <p className="text-sm text-slate-500">拖拽图片到此处，或点击选择（最多 6 张）</p>
+            <p className="mt-1 text-xs text-slate-400">支持 JPG、PNG、GIF、WebP、AVIF，单张最大 10MB</p>
+          </div>
+
+          {uploadingFiles.size > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {Array.from(uploadingFiles.entries()).map(([name, progress]) => (
+                <div key={name} className="rounded-xl border border-slate-200 bg-white p-2">
+                  <p className="text-xs text-slate-600 truncate">{name}</p>
+                  <div className="mt-1 h-1.5 rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-[var(--primary-strong)]" style={{width: `${progress}%`}} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {uploadedImageUrls.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {uploadedImageUrls.map((url, i) => (
+                <div key={url} className="relative rounded-xl border border-slate-200 overflow-hidden aspect-square">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setUploadedImageUrls(prev => prev.filter((_, j) => j !== i))}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/70 text-white text-xs flex items-center justify-center hover:bg-slate-900"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {uploadErrors.length > 0 && (
+            <div className="mt-2 text-xs text-red-500">
+              {uploadErrors.map((err, i) => <p key={i}>{err}</p>)}
+            </div>
+          )}
+
+          <details className="mt-3">
+            <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-600">或手动输入 URL</summary>
+            <textarea name="imageUrls" rows={4} placeholder="每行一个 URL，或用逗号分隔" className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[var(--primary-strong)] focus:outline-none focus:ring-2 focus:ring-[rgba(159,196,234,0.45)]" />
+          </details>
         </div>
       </section>
 

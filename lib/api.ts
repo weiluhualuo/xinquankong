@@ -541,3 +541,10 @@ export async function getAdminPostTypes(): Promise<AdminPostTypeOptionRecord[]> 
   return requestJson<AdminPostTypeOptionRecord[]>("/admin/post-types");
 }
 
+export async function getUploadUrl(fileName: string, contentType: string) {
+  return postJson<{ uploadUrl: string; publicUrl: string; key: string; expiresIn: number }>(
+    "/storage/upload-url",
+    { fileName, contentType }
+  );
+}
+
